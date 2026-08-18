@@ -17,9 +17,11 @@ const FONT_SIZES = [
 
 type Tab = 'account' | 'appearance' | 'security' | 'data' | 'about';
 
-export default function SettingsView({ settings, update }: {
+export default function SettingsView({ settings, update, accountEmail, onSignOut }: {
   settings: AppSettings;
   update: (patch: Partial<AppSettings>) => Promise<void>;
+  accountEmail?: string | null;
+  onSignOut?: () => void;
 }) {
   const [tab, setTab] = useState<Tab>('account');
   const [saved, setSaved] = useState(false);
@@ -67,9 +69,10 @@ export default function SettingsView({ settings, update }: {
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-900 dark:text-white">{settings.display_name}</div>
-                  <div className="text-xs text-gray-400">Local account</div>
+                  <div className="text-xs text-gray-400">{accountEmail ?? 'Offline local vault'}</div>
                 </div>
               </div>
+              {onSignOut && <button className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800" onClick={onSignOut}>Sign out of Supabase</button>}
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-500">Display Name</label>
                 <input
@@ -143,7 +146,7 @@ export default function SettingsView({ settings, update }: {
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">Security</h2>
               <ToggleRow
                 label="Auto-lock"
-                description="Lock the vault after inactivity"
+                description="Lock the vault when the app closes or restarts"
                 value={settings.auto_lock}
                 onChange={v => { update({ auto_lock: v }); showSaved(); }}
               />
@@ -159,7 +162,7 @@ export default function SettingsView({ settings, update }: {
                   <span className="text-sm font-medium text-gray-900 dark:text-white">Encryption Active</span>
                 </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Your data is protected with AES-256-GCM encryption and Argon2id key derivation.
+                  Vault payloads are protected with AES-256-GCM and Argon2id. The local vault key is held only while unlocked.
                 </p>
               </div>
             </div>
@@ -199,7 +202,7 @@ export default function SettingsView({ settings, update }: {
                 </div>
               </div>
               <p className="text-sm leading-6 text-gray-600 dark:text-gray-400">
-                Mazrielle OS is a private, local-first Life OS that brings passwords, notes, tasks, calendar, and income tracking into one secure workspace. All data is stored locally in your browser — no cloud sync required.
+                Mazrielle OS is a private, local-first Life OS that brings passwords, notes, tasks, calendar, and income tracking into one secure workspace. Local vault content is encrypted before it reaches PGlite; future sync will require a fresh Supabase session.
               </p>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
