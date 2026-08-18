@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { LayoutDashboard, KeyRound, StickyNote, SquareCheckBig, Calendar, TrendingUp, Folder, Star, WandSparkles, Clock, Settings, Menu, X, ShieldCheck } from 'lucide-react';
 import { useSettings } from '@/lib/useSettings';
-import { getDb } from '@/lib/db';
-import { seedData } from '@/lib/seed';
+import { hasVault, isVaultUnlocked, lockVault } from '@/lib/vault';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { useAuthSession } from '@/lib/useAuthSession';
+import AuthPage from '@/components/AuthPage';
+import VaultSetup from '@/components/VaultSetup';
+import VaultUnlock from '@/components/VaultUnlock';
 import { getInitials } from '@/lib/utils';
 import Dashboard from '@/views/Dashboard';
 import Vault from '@/views/Vault';
@@ -39,34 +43,55 @@ const TOOLS_ITEMS: { id: ViewId; label: string; icon: typeof WandSparkles }[] = 
 ];
 
 function App() {
+  const { session, loading } = useAuthSession();
+
+  useEffect(() => {
+    if (!session) void lockVault();
+  }, [session]);
+
+  if (loading) return <LoadingScreen label="Checking session..." />;
+  if (!session) return <AuthPage configured={isSupabaseConfigured()} />;
+  return <VaultGate ownerId={session.user.id} />;
+}
+
+function VaultGate({ ownerId }: { ownerId: string }) {
+  const [checking, setChecking] = useState(true);
+  const [hasLocalVault, setHasLocalVault] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+
+  const refresh = async () => {
+    setChecking(true);
+    const [localVault, isUnlocked] = await Promise.all([hasVault(ownerId), isVaultUnlocked()]);
+    setHasLocalVault(localVault);
+    setUnlocked(localVault && isUnlocked);
+    setChecking(false);
+  };
+
+  useEffect(() => { void refresh(); }, [ownerId]);
+
+  if (checking) return <LoadingScreen label="Preparing local vault..." />;
+  if (!hasLocalVault) return <VaultSetup ownerId={ownerId} onReady={() => { setHasLocalVault(true); setUnlocked(true); }} />;
+  if (!unlocked) return <VaultUnlock ownerId={ownerId} onUnlocked={() => setUnlocked(true)} />;
+  return <Workspace />;
+}
+
+function LoadingScreen({ label }: { label: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-[#0a0a0b]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative"><div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg"><ShieldCheck className="h-7 w-7 text-white" /></div><div className="absolute inset-0 animate-ping rounded-2xl bg-blue-500 opacity-20" /></div>
+        <div className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function Workspace() {
   const { settings, update, loaded } = useSettings();
-  const [ready, setReady] = useState(false);
   const [view, setView] = useState<ViewId>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      await getDb();
-      await seedData();
-      setReady(true);
-    })();
-  }, []);
-
-  if (!ready || !loaded) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-[#0a0a0b]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
-              <ShieldCheck className="h-7 w-7 text-white" />
-            </div>
-            <div className="absolute inset-0 animate-ping rounded-2xl bg-blue-500 opacity-20" />
-          </div>
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Loading Mazrielle OS...</div>
-        </div>
-      </div>
-    );
-  }
+  if (!loaded) return <LoadingScreen label="Loading Mazrielle OS..." />;
 
   const navItem = (item: { id: ViewId; label: string; icon: typeof LayoutDashboard }) => (
     <button
@@ -155,14 +180,14 @@ function App() {
         {/* Content */}
         <main className="flex-1 overflow-y-auto scrollbar-thin">
           <div className="animate-fade-in" key={view}>
-            {view === 'dashboard' && <Dashboard onNavigate={setView} settings={settings} />}
+            {view === 'dashboard' && <Dashboard onNavigate={target => setView(target as ViewId)} settings={settings} />}
             {view === 'vault' && <Vault />}
             {view === 'notes' && <Notes />}
             {view === 'tasks' && <Tasks />}
             {view === 'calendar' && <CalendarView />}
             {view === 'income' && <Income />}
             {view === 'folders' && <Folders />}
-            {view === 'favorites' && <Favorites onNavigate={setView} />}
+            {view === 'favorites' && <Favorites onNavigate={target => setView(target as ViewId)} />}
             {view === 'generator' && <PasswordGenerator />}
             {view === 'activity' && <ActivityLog />}
             {view === 'settings' && <SettingsView settings={settings} update={update} />}
