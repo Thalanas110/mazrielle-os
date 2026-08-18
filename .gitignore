@@ -21,3 +21,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Rust/Tauri build output
+target
+desktop/src-tauri/target
