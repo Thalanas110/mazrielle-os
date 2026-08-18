@@ -5,6 +5,7 @@ import type { VaultEnvelope } from './crypto.ts';
 import type { VaultMetadata } from './types.ts';
 
 export const MIN_MASTER_PASSWORD_LENGTH = 8;
+const REMEMBERED_OWNER_KEY = 'mazrielle-os.owner-id';
 
 export function validateMasterPassword(password: string): string | null {
   return password.length >= MIN_MASTER_PASSWORD_LENGTH ? null : 'Master password must be at least 8 characters';
@@ -24,6 +25,7 @@ export function generateRecoveryKey(): string {
 
 export async function getVaultMetadata(ownerId: string): Promise<VaultMetadata | null> {
   await setVaultOwner(ownerId);
+  rememberVaultOwner(ownerId);
   const db = await getDb();
   const result = await db.query<Record<string, unknown>>(
     'SELECT owner_id, envelope, created_at, updated_at FROM vault_meta WHERE owner_id=$1',
@@ -56,7 +58,16 @@ export async function createVault(ownerId: string, masterPassword: string): Prom
     `INSERT INTO vault_meta (owner_id, envelope, created_at, updated_at) VALUES ($1,$2,$3,$3)`,
     [ownerId, JSON.stringify(envelope), timestamp],
   );
+  rememberVaultOwner(ownerId);
   return recoveryKey;
+}
+
+export function rememberVaultOwner(ownerId: string): void {
+  if (typeof localStorage !== 'undefined') localStorage.setItem(REMEMBERED_OWNER_KEY, ownerId);
+}
+
+export function getRememberedVaultOwner(): string | null {
+  return typeof localStorage === 'undefined' ? null : localStorage.getItem(REMEMBERED_OWNER_KEY);
 }
 
 export async function unlockVault(ownerId: string, secret: string): Promise<void> {
