@@ -8,6 +8,8 @@ Mazrielle OS is a private, local-first workspace for credentials, notes, tasks, 
 - `desktop/src-tauri/` contains the Tauri desktop shell and Rust-owned cryptography state.
 - `android/` contains the Capacitor configuration and generated Android project.
 - PGlite persists the local database in a fresh `idb://mazrielle-os-vault` store.
+- `supabase/` contains the hosted sync schema, local Supabase CLI configuration, and no seed data.
+- `src/lib/supabase.types.ts` is generated from the deployed Supabase schema.
 
 ## Security Model
 
@@ -34,7 +36,30 @@ Set the Supabase project values in `.env`:
 ```text
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_REDIRECT_URL=http://localhost:5173
 ```
+
+## Supabase Setup
+
+The repository is configured for project ref `ppidyrbfrswlkwlfmelw`. The migration creates only
+encrypted vault metadata and encrypted record payloads. Both tables have forced RLS, owner-scoped
+policies, and no anonymous grants. Seed execution is disabled.
+
+Authenticate the Supabase CLI, then apply the migration:
+
+```powershell
+npx supabase login
+npm run supabase:link
+npm run supabase:lint
+npm run supabase:push
+npm run supabase:types
+```
+
+The hosted project must also allow the exact callback URLs used by each shell in Authentication > URL
+Configuration: `http://localhost:5173`, `http://127.0.0.1:5173`, `tauri://localhost`,
+`http://tauri.localhost`, `http://localhost`, and `capacitor://localhost`. Enable email/password
+authentication and email confirmations in Authentication > Providers. Do not commit `.env` or any
+Supabase access token.
 
 ## Commands
 
@@ -48,6 +73,8 @@ npm run desktop:dev
 npm run desktop:build
 npm run android:sync
 npm run android:build
+npm run supabase:lint
+npm run supabase:types
 ```
 
 The DOCX importer reads a local file, supports tables and labeled free-form text, shows an editable preview, and encrypts values only after confirmation. It does not access Google Drive.
