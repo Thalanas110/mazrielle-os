@@ -71,7 +71,9 @@ function randomBytes(length: number): Uint8Array {
 
 async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
   const raw = await argon2id({
-    ...KDF_OPTIONS,
+    memory_size: KDF_OPTIONS.memorySize,
+    iterations: KDF_OPTIONS.iterations,
+    parallelism: KDF_OPTIONS.parallelism,
     password: secret,
     salt,
     outputType: 'binary',
@@ -161,4 +163,3 @@ export function createWebCryptoProvider(): VaultCryptoProvider {
     },
   };
 }
-
