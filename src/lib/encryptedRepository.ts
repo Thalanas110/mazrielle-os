@@ -74,10 +74,9 @@ export async function listRecords<T>(table: EncryptedTable, folderId?: string | 
 
 export async function getRecord<T>(table: EncryptedTable, id: string): Promise<StoredRecord<T> | null> {
   const db = await getDb();
-  const result = await db.query<StoredRow>(
-    `SELECT id, owner_id, folder_id, payload, created_at, updated_at FROM ${table} WHERE id=$1 AND deleted_at IS NULL`,
-    [id],
-  );
+  const result = table === 'app_settings'
+    ? await db.query<StoredRow>(`SELECT id, owner_id, payload, created_at, updated_at FROM ${table} WHERE id=$1 AND deleted_at IS NULL`, [id])
+    : await db.query<StoredRow>(`SELECT id, owner_id, folder_id, payload, created_at, updated_at FROM ${table} WHERE id=$1 AND deleted_at IS NULL`, [id]);
   const row = queryRows(result)[0];
   if (!row) return null;
   return {
