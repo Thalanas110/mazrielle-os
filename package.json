@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "desktop:dev": "tauri dev --config desktop/src-tauri/tauri.conf.json",
+    "desktop:build": "npm run build && tauri build --config desktop/src-tauri/tauri.conf.json",
+    "android:sync": "npm run build && cd android && npx cap sync android",
+    "android:build": "npm run build && cd android && npx cap sync android && cd android && gradlew.bat assembleDebug",
     "lint": "eslint .",
     "test": "node --experimental-strip-types --test test/*.test.ts",
     "preview": "vite preview",
