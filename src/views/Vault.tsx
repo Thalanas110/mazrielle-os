@@ -9,6 +9,7 @@ import { getFaviconUrl, passwordStrength } from '@/lib/utils';
 export default function Vault() {
   const [creds, setCreds] = useState<Credential[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [viewMode] = useState<'grid' | 'list'>('grid');
   const [search, setSearch] = useState('');
   const [filterFolder, setFilterFolder] = useState<string | null>(null);
   const [editing, setEditing] = useState<Credential | null>(null);

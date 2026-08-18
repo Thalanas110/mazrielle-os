@@ -169,7 +169,7 @@ export default function Dashboard({ onNavigate, settings }: DashboardProps) {
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white">World Clocks</h2>
             </div>
             <div className="space-y-1 p-2">
-              {worldClocks.map((c, i) => (
+              {WORLD_CLOCKS.map((c, i) => (
                 <div key={c.city} className="flex items-center justify-between rounded-lg px-3 py-2">
                   <span className="text-sm text-gray-600 dark:text-gray-400">{c.city}</span>
                   <span className="text-sm font-medium tabular-nums text-gray-900 dark:text-white">{clocks[i]}</span>

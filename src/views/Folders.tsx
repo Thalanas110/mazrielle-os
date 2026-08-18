@@ -9,6 +9,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 
 export default function Folders() {
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [viewMode] = useState<'grid' | 'list'>('grid');
   const [creds, setCreds] = useState<Credential[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [showAdd, setShowAdd] = useState(false);
