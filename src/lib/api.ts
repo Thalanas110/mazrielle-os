@@ -4,6 +4,7 @@ import { createOwnerSettingsId } from './vault';
 import { clearRecords, getRecord, insertRecord, insertSettings, listRecords, softDeleteRecord, updateRecord } from './encryptedRepository';
 import type { ActivityLog, AppSettings, Credential, Folder, Income, Note, Task } from './types';
 import { DEFAULT_SETTINGS as DEFAULTS } from './types';
+import { settingsFromRow } from './settings';
 
 function withMetadata<T extends object>(record: { id: string; folder_id: string | null; created_at: string; updated_at: string; value: T }): T & Pick<typeof record, 'id' | 'folder_id' | 'created_at' | 'updated_at'> {
   return { ...record.value, id: record.id, folder_id: record.folder_id, created_at: record.created_at, updated_at: record.updated_at };
@@ -20,10 +21,10 @@ export async function getSettings(): Promise<AppSettings> {
   const row = result.rows[0];
   if (!row) {
     await insertSettings(DEFAULTS, createOwnerSettingsId(ownerId));
-    return { ...DEFAULTS };
+    return settingsFromRow(undefined);
   }
   const record = await getRecord<AppSettings>('app_settings', String(row.id));
-  return record ? { ...DEFAULTS, ...record.value } : { ...DEFAULTS };
+  return settingsFromRow(record?.value as Record<string, unknown> | undefined);
 }
 
 export async function updateSettings(patch: Partial<AppSettings>): Promise<void> {
