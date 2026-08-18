@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { User, Palette, ShieldCheck, Database, Info, Check } from 'lucide-react';
 import type { AppSettings } from '@/lib/types';
 import { PageHeader } from '@/components/PageHeader';
+import DocxImportPanel from '@/components/DocxImportPanel';
 
 const ACCENT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#6366f1'];
 const THEMES = [
@@ -173,13 +174,10 @@ export default function SettingsView({ settings, update }: {
                 <button className="btn-ghost mt-3 border border-gray-200 dark:border-gray-800" disabled>Export Backup (Coming Soon)</button>
               </div>
               <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white">CSV Import / Export</h3>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Import or export credentials as CSV.</p>
-                <div className="mt-3 flex gap-2">
-                  <button className="btn-ghost border border-gray-200 dark:border-gray-800" disabled>Import</button>
-                  <button className="btn-ghost border border-gray-200 dark:border-gray-800" disabled>Export</button>
-                </div>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white">Local backup source</h3>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Imported values are reviewed before they are encrypted into the vault.</p>
               </div>
+              <DocxImportPanel />
               <div className="rounded-lg border border-red-200 p-4 dark:border-red-500/20">
                 <h3 className="text-sm font-medium text-red-600 dark:text-red-400">Reset Vault</h3>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Permanently delete all data and start fresh.</p>
