@@ -78,6 +78,13 @@ export interface AppSettings {
   show_website_icons: boolean;
 }
 
+export interface VaultMetadata {
+  owner_id: string;
+  envelope: import('./crypto').VaultEnvelope;
+  created_at: string;
+  updated_at: string;
+}
+
 export const DEFAULT_SETTINGS: AppSettings = {
   display_name: 'Ren',
   theme: 'dark',
