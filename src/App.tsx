@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LayoutDashboard, KeyRound, StickyNote, SquareCheckBig, Calendar, TrendingUp, Folder, Star, WandSparkles, Clock, Settings, Menu, X, ShieldCheck } from 'lucide-react';
 import { useSettings } from '@/lib/useSettings';
-import { hasVault, isVaultUnlocked, lockVault } from '@/lib/vault';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { getRememberedVaultOwner, hasVault, isVaultUnlocked, lockVault, rememberVaultOwner } from '@/lib/vault';
+import { isSupabaseConfigured, signOut } from '@/lib/supabase';
 import { useAuthSession } from '@/lib/useAuthSession';
 import AuthPage from '@/components/AuthPage';
 import VaultSetup from '@/components/VaultSetup';
@@ -44,9 +44,19 @@ const TOOLS_ITEMS: { id: ViewId; label: string; icon: typeof WandSparkles }[] = 
 
 function App() {
   const { session, loading } = useAuthSession();
+  const [rememberedOwner, setRememberedOwner] = useState(() => getRememberedVaultOwner());
+  const previousSession = useRef(session);
 
   useEffect(() => {
-    if (!session) void lockVault();
+    if (previousSession.current && !session) void lockVault();
+    previousSession.current = session;
+  }, [session]);
+
+  useEffect(() => {
+    if (session) {
+      rememberVaultOwner(session.user.id);
+      setRememberedOwner(session.user.id);
+    }
   }, [session]);
 
   useEffect(() => {
@@ -56,11 +66,12 @@ function App() {
   }, []);
 
   if (loading) return <LoadingScreen label="Checking session..." />;
-  if (!session) return <AuthPage configured={isSupabaseConfigured()} />;
-  return <VaultGate ownerId={session.user.id} />;
+  const ownerId = session?.user.id ?? rememberedOwner;
+  if (!ownerId) return <AuthPage configured={isSupabaseConfigured()} />;
+  return <VaultGate ownerId={ownerId} email={session?.user.email ?? null} />;
 }
 
-function VaultGate({ ownerId }: { ownerId: string }) {
+function VaultGate({ ownerId, email }: { ownerId: string; email: string | null }) {
   const [checking, setChecking] = useState(true);
   const [hasLocalVault, setHasLocalVault] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
@@ -78,7 +89,7 @@ function VaultGate({ ownerId }: { ownerId: string }) {
   if (checking) return <LoadingScreen label="Preparing local vault..." />;
   if (!hasLocalVault) return <VaultSetup ownerId={ownerId} onReady={() => { setHasLocalVault(true); setUnlocked(true); }} />;
   if (!unlocked) return <VaultUnlock ownerId={ownerId} onUnlocked={() => setUnlocked(true)} />;
-  return <Workspace />;
+  return <Workspace email={email} />;
 }
 
 function LoadingScreen({ label }: { label: string }) {
@@ -92,7 +103,7 @@ function LoadingScreen({ label }: { label: string }) {
   );
 }
 
-function Workspace() {
+function Workspace({ email }: { email: string | null }) {
   const { settings, update, loaded } = useSettings();
   const [view, setView] = useState<ViewId>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -196,7 +207,7 @@ function Workspace() {
             {view === 'favorites' && <Favorites onNavigate={target => setView(target as ViewId)} />}
             {view === 'generator' && <PasswordGenerator />}
             {view === 'activity' && <ActivityLog />}
-            {view === 'settings' && <SettingsView settings={settings} update={update} />}
+            {view === 'settings' && <SettingsView settings={settings} update={update} accountEmail={email} onSignOut={email ? () => void signOut() : undefined} />}
           </div>
         </main>
       </div>
