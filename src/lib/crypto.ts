@@ -71,14 +71,15 @@ function randomBytes(length: number): Uint8Array {
 
 async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
   const raw = await argon2id({
-    memory_size: KDF_OPTIONS.memorySize,
+    memorySize: KDF_OPTIONS.memorySize,
     iterations: KDF_OPTIONS.iterations,
     parallelism: KDF_OPTIONS.parallelism,
     password: secret,
     salt,
+    hashLength: KDF_OPTIONS.hashLength,
     outputType: 'binary',
   });
-  return webCrypto().subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+  return webCrypto().subtle.importKey('raw', raw as unknown as BufferSource, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
 }
 
 async function wrapBytes(secret: string, bytes: Uint8Array): Promise<WrappedKey> {
@@ -92,7 +93,9 @@ async function wrapBytes(secret: string, bytes: Uint8Array): Promise<WrappedKey>
     salt: toBase64(salt),
     nonce: toBase64(nonce),
     ciphertext: toBase64(new Uint8Array(ciphertext)),
-    ...KDF_OPTIONS,
+    memory_size: KDF_OPTIONS.memorySize,
+    iterations: KDF_OPTIONS.iterations,
+    parallelism: KDF_OPTIONS.parallelism,
   };
 }
 
