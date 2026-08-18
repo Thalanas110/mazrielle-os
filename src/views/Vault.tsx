@@ -1,19 +1,16 @@
 import { useEffect, useState } from 'react';
-import { KeyRound, Plus, Search, Eye, EyeOff, Copy, Star, Trash2, Edit3, Folder as FolderIcon, X, Check } from 'lucide-react';
+import { KeyRound, Plus, Search, Eye, EyeOff, Copy, Star, Trash2, Edit3, Check } from 'lucide-react';
 import { getCredentials, createCredential, updateCredential, deleteCredential, getFolders } from '@/lib/api';
 import type { Credential, Folder } from '@/lib/types';
 import { PageHeader, EmptyState } from '@/components/PageHeader';
 import { Modal, ConfirmDialog } from '@/components/Modal';
 import { getFaviconUrl, passwordStrength } from '@/lib/utils';
 
-const FOLDER_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#6b7280'];
-
 export default function Vault() {
   const [creds, setCreds] = useState<Credential[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [search, setSearch] = useState('');
   const [filterFolder, setFilterFolder] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [editing, setEditing] = useState<Credential | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Credential | null>(null);

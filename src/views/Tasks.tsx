@@ -4,7 +4,7 @@ import { getTasks, createTask, updateTask, deleteTask } from '@/lib/api';
 import type { Task, TaskStatus, TaskPriority } from '@/lib/types';
 import { PageHeader, EmptyState } from '@/components/PageHeader';
 import { Modal, ConfirmDialog } from '@/components/Modal';
-import { formatDate, formatRelative, isOverdue } from '@/lib/utils';
+import { formatRelative, isOverdue } from '@/lib/utils';
 
 const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
   { id: 'todo', label: 'To Do', color: 'bg-gray-400' },

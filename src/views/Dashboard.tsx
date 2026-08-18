@@ -10,6 +10,13 @@ interface DashboardProps {
   settings: AppSettings;
 }
 
+const WORLD_CLOCKS = [
+  { city: 'Manila', tz: 'Asia/Manila' },
+  { city: 'New York', tz: 'America/New_York' },
+  { city: 'London', tz: 'Europe/London' },
+  { city: 'Tokyo', tz: 'Asia/Tokyo' },
+];
+
 export default function Dashboard({ onNavigate, settings }: DashboardProps) {
   const [creds, setCreds] = useState<Credential[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -42,17 +49,10 @@ export default function Dashboard({ onNavigate, settings }: DashboardProps) {
     { label: 'This Month', value: formatCurrency(monthIncome, 'PHP'), icon: TrendingUp, color: 'from-purple-500 to-purple-600', view: 'income' },
   ];
 
-  const worldClocks = [
-    { city: 'Manila', tz: 'Asia/Manila' },
-    { city: 'New York', tz: 'America/New_York' },
-    { city: 'London', tz: 'Europe/London' },
-    { city: 'Tokyo', tz: 'Asia/Tokyo' },
-  ];
-
   const [clocks, setClocks] = useState<string[]>([]);
   useEffect(() => {
     const update = () => {
-      setClocks(worldClocks.map(c => {
+      setClocks(WORLD_CLOCKS.map(c => {
         return new Date().toLocaleTimeString('en-US', { timeZone: c.tz, hour: '2-digit', minute: '2-digit', hour12: true });
       }));
     };

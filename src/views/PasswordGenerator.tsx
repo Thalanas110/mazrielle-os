@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { WandSparkles, Copy, Check, RefreshCw } from 'lucide-react';
+import { Copy, Check, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { generatePassword, passwordStrength } from '@/lib/utils';
 

@@ -14,7 +14,6 @@ export default function Folders() {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Folder | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Folder | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const load = async () => {
     const [f, c, n] = await Promise.all([getFolders(), getCredentials(), getNotes()]);

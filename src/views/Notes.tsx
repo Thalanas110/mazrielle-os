@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StickyNote, Plus, Search, Star, Trash2, Edit3, Eye, EyeOff, Copy } from 'lucide-react';
+import { StickyNote, Plus, Search, Star, Trash2, Edit3, Eye } from 'lucide-react';
 import { getNotes, createNote, updateNote, deleteNote, getFolders } from '@/lib/api';
 import type { Note, Folder } from '@/lib/types';
 import { PageHeader, EmptyState } from '@/components/PageHeader';
@@ -28,17 +28,6 @@ export default function Notes() {
     const matchesFolder = filterFolder === null || n.folder_id === filterFolder;
     return matchesSearch && matchesFolder;
   });
-
-  const renderMarkdown = (content: string) => {
-    return content
-      .replace(/^### (.+)$/gm, '<h3 class="text-base font-semibold mt-3 mb-1">$1</h3>')
-      .replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold mt-4 mb-2">$1</h2>')
-      .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
-      .replace(/\n/g, '<br />');
-  };
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">

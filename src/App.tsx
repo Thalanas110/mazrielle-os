@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LayoutDashboard, KeyRound, StickyNote, SquareCheckBig, Calendar, TrendingUp, Folder, Star, WandSparkles, Clock, Settings, Menu, X, ShieldCheck } from 'lucide-react';
 import { useSettings } from '@/lib/useSettings';
 import { getRememberedVaultOwner, hasVault, isVaultUnlocked, lockVault, rememberVaultOwner } from '@/lib/vault';
@@ -76,15 +76,15 @@ function VaultGate({ ownerId, email }: { ownerId: string; email: string | null }
   const [hasLocalVault, setHasLocalVault] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setChecking(true);
     const [localVault, isUnlocked] = await Promise.all([hasVault(ownerId), isVaultUnlocked()]);
     setHasLocalVault(localVault);
     setUnlocked(localVault && isUnlocked);
     setChecking(false);
-  };
+  }, [ownerId]);
 
-  useEffect(() => { void refresh(); }, [ownerId]);
+  useEffect(() => { void refresh(); }, [refresh]);
 
   if (checking) return <LoadingScreen label="Preparing local vault..." />;
   if (!hasLocalVault) return <VaultSetup ownerId={ownerId} onReady={() => { setHasLocalVault(true); setUnlocked(true); }} />;
@@ -204,7 +204,7 @@ function Workspace({ email }: { email: string | null }) {
             {view === 'calendar' && <CalendarView />}
             {view === 'income' && <Income />}
             {view === 'folders' && <Folders />}
-            {view === 'favorites' && <Favorites onNavigate={target => setView(target as ViewId)} />}
+            {view === 'favorites' && <Favorites />}
             {view === 'generator' && <PasswordGenerator />}
             {view === 'activity' && <ActivityLog />}
             {view === 'settings' && <SettingsView settings={settings} update={update} accountEmail={email} onSignOut={email ? () => void signOut() : undefined} />}

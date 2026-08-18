@@ -51,8 +51,13 @@ export async function createFolder(name: string, type: string, color: string): P
 export async function updateFolder(id: string, patch: Partial<Folder>): Promise<void> {
   const record = await getRecord<Folder>('folders', id);
   if (!record) return;
-  const { id: _id, created_at: _created, updated_at: _updated, ...valuePatch } = patch;
-  await updateRecord('folders', id, { ...record.value, ...valuePatch });
+  const valuePatch = {
+    name: patch.name ?? record.value.name,
+    type: record.value.type,
+    color: patch.color ?? record.value.color,
+    favorite: patch.favorite ?? record.value.favorite,
+  };
+  await updateRecord('folders', id, valuePatch);
 }
 
 export async function deleteFolder(id: string): Promise<void> {

@@ -7,7 +7,7 @@ import { getFaviconUrl } from '@/lib/utils';
 
 type Tab = 'passwords' | 'notes' | 'folders';
 
-export default function Favorites({ onNavigate }: { onNavigate: (view: string) => void }) {
+export default function Favorites() {
   const [tab, setTab] = useState<Tab>('passwords');
   const [creds, setCreds] = useState<Credential[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
