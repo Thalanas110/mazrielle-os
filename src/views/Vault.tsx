@@ -4,7 +4,8 @@ import { getCredentials, createCredential, updateCredential, deleteCredential, g
 import type { Credential, Folder } from '@/lib/types';
 import { PageHeader, EmptyState } from '@/components/PageHeader';
 import { Modal, ConfirmDialog } from '@/components/Modal';
-import { getFaviconUrl, passwordStrength } from '@/lib/utils';
+import { passwordStrength } from '@/lib/utils';
+import { copySensitiveText } from '@/lib/clipboard';
 
 export default function Vault() {
   const [creds, setCreds] = useState<Credential[]>([]);
@@ -31,8 +32,8 @@ export default function Vault() {
     return matchesSearch && matchesFolder;
   });
 
-  const handleCopy = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
+  const handleCopy = async (text: string, field: string) => {
+    await copySensitiveText(text);
     setCopied(field);
     setTimeout(() => setCopied(null), 1500);
   };
@@ -98,11 +99,7 @@ export default function Vault() {
               <div key={c.id} className="card group p-4 transition-all hover:shadow-md">
                 <div className="flex items-start gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gray-100 dark:bg-gray-800">
-                    {c.website ? (
-                      <img src={getFaviconUrl(c.website)} alt="" className="h-6 w-6 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    ) : (
-                      <KeyRound className="h-5 w-5 text-gray-400" />
-                    )}
+                    <KeyRound className="h-5 w-5 text-gray-400" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
@@ -119,12 +116,12 @@ export default function Vault() {
                   <button className="btn-icon h-7 w-7" onClick={() => toggleReveal(c.id)}>
                     {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                   </button>
-                  <button className="btn-icon h-7 w-7" onClick={() => handleCopy(c.password, `pass-${c.id}`)}>
+                   <button className="btn-icon h-7 w-7" onClick={() => void handleCopy(c.password, `pass-${c.id}`)}>
                     {copied === `pass-${c.id}` ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
                 </div>
                 <div className="mt-3 flex items-center gap-1">
-                  <button className="btn-icon h-8 w-8" onClick={() => handleCopy(c.username, `user-${c.id}`)} title="Copy username">
+                   <button className="btn-icon h-8 w-8" onClick={() => void handleCopy(c.username, `user-${c.id}`)} title="Copy username">
                     {copied === `user-${c.id}` ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                   </button>
                   <button className="btn-icon h-8 w-8" onClick={() => setEditing(c)} title="Edit">
@@ -147,7 +144,7 @@ export default function Vault() {
           {filtered.map(c => (
             <div key={c.id} className="flex items-center gap-3 p-4">
               <div className="grid h-9 w-9 place-items-center rounded-lg bg-gray-100 dark:bg-gray-800">
-                {c.website ? <img src={getFaviconUrl(c.website)} alt="" className="h-5 w-5 rounded" /> : <KeyRound className="h-4 w-4 text-gray-400" />}
+                <KeyRound className="h-4 w-4 text-gray-400" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
@@ -156,7 +153,7 @@ export default function Vault() {
                 </div>
                 <span className="truncate text-xs text-gray-400">{c.username}</span>
               </div>
-              <button className="btn-icon" onClick={() => handleCopy(c.password, `pass-${c.id}`)}>
+               <button className="btn-icon" onClick={() => void handleCopy(c.password, `pass-${c.id}`)}>
                 {copied === `pass-${c.id}` ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
               </button>
               <button className="btn-icon" onClick={() => setEditing(c)}><Edit3 className="h-4 w-4" /></button>

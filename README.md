@@ -14,13 +14,15 @@ Mazrielle OS is a private, local-first workspace for credentials, notes, tasks, 
 ## Security Model
 
 1. Supabase email/password authentication is required before first-time local vault setup.
-2. The local vault has a separate master password with a minimum length of eight characters.
+2. The local vault has a separate master passphrase with a minimum length of fourteen characters.
 3. A random 256-bit vault key is wrapped by Argon2id-derived keys from both the master password and recovery key.
 4. Vault payloads are encrypted with AES-256-GCM before they are written to PGlite.
 5. PGlite tables enable and force row-level security using the current opaque owner context.
 6. Only routing and sync metadata remains queryable: IDs, owner IDs, folder IDs, timestamps, and soft-delete state.
 7. The desktop target keeps the active vault key in Rust memory. The browser/dev fallback uses Web Crypto; Android native crypto is reserved for the mobile implementation sprint.
 8. The vault locks on app close/restart. Supabase logout preserves the encrypted local vault and requires the master password to unlock it offline.
+9. The desktop WebView uses a restrictive CSP, notes preview as text, and does not load third-party favicon services.
+10. Supabase sessions are memory-only; sensitive clipboard values are cleared after a short delay when the platform permits it.
 
 No seed or demo records are inserted. Existing prototype data is not migrated.
 

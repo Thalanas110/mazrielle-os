@@ -132,12 +132,6 @@ export default function SettingsView({ settings, update, accountEmail, onSignOut
                   ))}
                 </div>
               </div>
-              <ToggleRow
-                label="Show website icons"
-                description="Display favicons for credential entries"
-                value={settings.show_website_icons}
-                onChange={v => { update({ show_website_icons: v }); showSaved(); }}
-              />
             </div>
           )}
 

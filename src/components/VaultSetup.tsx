@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, Copy, KeyRound, ShieldCheck } from 'lucide-react';
 import { createVault, validateMasterPassword } from '@/lib/vault';
+import { copySensitiveText } from '@/lib/clipboard';
 
 export default function VaultSetup({ ownerId, onReady }: { ownerId: string; onReady: () => void }) {
   const [masterPassword, setMasterPassword] = useState('');
@@ -30,7 +31,7 @@ export default function VaultSetup({ ownerId, onReady }: { ownerId: string; onRe
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">One-time recovery setup</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">Store this recovery key safely</h1>
           <p className="mt-3 text-sm leading-6 text-white/55">Keep it outside Mazrielle OS, such as in your secured password document. It is the only alternate way to unlock this local vault.</p>
-          <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 p-4"><code className="break-all text-sm tracking-[0.15em] text-cyan-200">{recoveryKey}</code><button className="btn-icon shrink-0 text-white" title="Copy recovery key" onClick={() => navigator.clipboard.writeText(recoveryKey)}><Copy className="h-4 w-4" /></button></div>
+          <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 p-4"><code className="break-all text-sm tracking-[0.15em] text-cyan-200">{recoveryKey}</code><button className="btn-icon shrink-0 text-white" title="Copy recovery key" onClick={() => void copySensitiveText(recoveryKey)}><Copy className="h-4 w-4" /></button></div>
           <label className="mt-6 flex items-start gap-3 text-sm text-white/70"><input type="checkbox" checked={stored} onChange={e => setStored(e.target.checked)} className="mt-0.5 rounded" /><span>I stored this recovery key somewhere secure.</span></label>
           <button className="mt-6 w-full rounded-xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-[#07111d] disabled:opacity-40" disabled={!stored} onClick={onReady}><Check className="mr-2 inline h-4 w-4" />Open my vault</button>
         </section>
@@ -44,11 +45,11 @@ export default function VaultSetup({ ownerId, onReady }: { ownerId: string; onRe
         <div className="mb-8 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-cyan-300 to-blue-600 text-[#07111d]"><ShieldCheck className="h-6 w-6" /></div>
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">Local vault setup</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Create your master password</h1>
-        <p className="mt-3 text-sm leading-6 text-white/55">This password is separate from your Supabase login and protects the local encrypted vault. Use at least 8 characters.</p>
+          <p className="mt-3 text-sm leading-6 text-white/55">This password is separate from your Supabase login and protects the local encrypted vault. Use a memorable passphrase of at least 14 characters.</p>
         {error && <div className="mt-5 rounded-xl border border-red-300/20 bg-red-300/10 p-3 text-sm text-red-100">{error}</div>}
         <div className="mt-6 space-y-4">
-          <label className="block"><span className="mb-2 block text-xs font-medium text-white/60">Master password</span><input className="input border-white/10 bg-black/20 text-white" type="password" minLength={8} value={masterPassword} onChange={e => setMasterPassword(e.target.value)} autoFocus /></label>
-          <label className="block"><span className="mb-2 block text-xs font-medium text-white/60">Confirm master password</span><input className="input border-white/10 bg-black/20 text-white" type="password" minLength={8} value={confirmation} onChange={e => setConfirmation(e.target.value)} /></label>
+          <label className="block"><span className="mb-2 block text-xs font-medium text-white/60">Master password</span><input className="input border-white/10 bg-black/20 text-white" type="password" minLength={14} value={masterPassword} onChange={e => setMasterPassword(e.target.value)} autoFocus /></label>
+          <label className="block"><span className="mb-2 block text-xs font-medium text-white/60">Confirm master password</span><input className="input border-white/10 bg-black/20 text-white" type="password" minLength={14} value={confirmation} onChange={e => setConfirmation(e.target.value)} /></label>
           <button className="w-full rounded-xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-[#07111d] disabled:opacity-40" disabled={busy} onClick={setup}>{busy ? 'Creating encrypted vault...' : 'Create encrypted vault'}</button>
         </div>
       </section>

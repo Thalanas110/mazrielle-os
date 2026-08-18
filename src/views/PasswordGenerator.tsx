@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Copy, Check, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { generatePassword, passwordStrength } from '@/lib/utils';
+import { copySensitiveText } from '@/lib/clipboard';
 
 export default function PasswordGenerator() {
   const [length, setLength] = useState(16);
@@ -22,7 +23,7 @@ export default function PasswordGenerator() {
 
   const handleCopy = () => {
     if (!password) return;
-    navigator.clipboard.writeText(password);
+    void copySensitiveText(password);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };

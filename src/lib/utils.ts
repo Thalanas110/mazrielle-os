@@ -78,8 +78,3 @@ export function passwordStrength(password: string): { score: number; label: stri
 export function getInitials(name: string): string {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
-
-export function getFaviconUrl(website: string): string {
-  const domain = website.replace(/^https?:\/\//, '').replace(/^www\./, '');
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-}

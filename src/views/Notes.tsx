@@ -145,17 +145,6 @@ function NoteForm({ note, folders, previewMode, setPreviewMode, onClose, onSave 
     onSave();
   };
 
-  const renderMd = (content: string) => {
-    return content
-      .replace(/^### (.+)$/gm, '<h3 class="text-base font-semibold mt-3 mb-1">$1</h3>')
-      .replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold mt-4 mb-2">$1</h2>')
-      .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
-      .replace(/\n/g, '<br />');
-  };
-
   return (
     <Modal open onClose={onClose} title={note ? 'Edit Note' : 'New Note'} size="lg">
       <div className="space-y-4">
@@ -175,7 +164,7 @@ function NoteForm({ note, folders, previewMode, setPreviewMode, onClose, onSave 
           </button>
         </div>
         {previewMode ? (
-          <div className="min-h-[200px] rounded-lg border border-gray-200 p-4 text-sm text-gray-700 dark:border-gray-800 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: renderMd(form.content) || '<span class="text-gray-400">Nothing to preview</span>' }} />
+          <div className="min-h-[200px] whitespace-pre-wrap rounded-lg border border-gray-200 p-4 text-sm text-gray-700 dark:border-gray-800 dark:text-gray-300">{form.content || <span className="text-gray-400">Nothing to preview</span>}</div>
         ) : (
           <textarea
             className="input min-h-[200px] resize-none font-mono text-sm"

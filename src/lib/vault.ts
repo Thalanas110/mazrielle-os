@@ -1,14 +1,15 @@
 import { getDb, getVaultOwner, genId, now, setVaultOwner } from './db.ts';
 import { queryRows } from './queryRows.ts';
 import { getVaultCryptoProvider } from './platformCrypto.ts';
+import { clearSensitiveClipboard } from './clipboard.ts';
 import type { VaultEnvelope } from './crypto.ts';
 import type { VaultMetadata } from './types.ts';
 
-export const MIN_MASTER_PASSWORD_LENGTH = 8;
+export const MIN_MASTER_PASSWORD_LENGTH = 14;
 const REMEMBERED_OWNER_KEY = 'mazrielle-os.owner-id';
 
 export function validateMasterPassword(password: string): string | null {
-  return password.length >= MIN_MASTER_PASSWORD_LENGTH ? null : 'Master password must be at least 8 characters';
+  return password.length >= MIN_MASTER_PASSWORD_LENGTH ? null : 'Master password must be at least 14 characters';
 }
 
 export function generateRecoveryKey(): string {
@@ -79,6 +80,7 @@ export async function unlockVault(ownerId: string, secret: string): Promise<void
 }
 
 export async function lockVault(): Promise<void> {
+  await clearSensitiveClipboard();
   const crypto = await getVaultCryptoProvider();
   crypto.lock();
 }

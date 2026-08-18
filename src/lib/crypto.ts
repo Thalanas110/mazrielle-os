@@ -79,7 +79,11 @@ async function deriveKey(secret: string, salt: Uint8Array): Promise<CryptoKey> {
     hashLength: KDF_OPTIONS.hashLength,
     outputType: 'binary',
   });
-  return webCrypto().subtle.importKey('raw', raw as unknown as BufferSource, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+  try {
+    return await webCrypto().subtle.importKey('raw', raw as unknown as BufferSource, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+  } finally {
+    (raw as unknown as Uint8Array).fill(0);
+  }
 }
 
 async function wrapBytes(secret: string, bytes: Uint8Array): Promise<WrappedKey> {

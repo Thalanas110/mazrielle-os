@@ -3,7 +3,6 @@ import { Star, KeyRound, StickyNote, Folder as FolderIcon } from 'lucide-react';
 import { getCredentials, getNotes, getFolders, updateCredential, updateNote, updateFolder } from '@/lib/api';
 import type { Credential, Note, Folder } from '@/lib/types';
 import { PageHeader, EmptyState } from '@/components/PageHeader';
-import { getFaviconUrl } from '@/lib/utils';
 
 type Tab = 'passwords' | 'notes' | 'folders';
 
@@ -68,7 +67,7 @@ export default function Favorites() {
               <div key={c.id} className="card group p-4 transition-all hover:shadow-md">
                 <div className="flex items-start gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gray-100 dark:bg-gray-800">
-                    {c.website ? <img src={getFaviconUrl(c.website)} alt="" className="h-6 w-6 rounded" /> : <KeyRound className="h-5 w-5 text-gray-400" />}
+                    <KeyRound className="h-5 w-5 text-gray-400" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-sm font-semibold text-gray-900 dark:text-white">{c.title}</h3>

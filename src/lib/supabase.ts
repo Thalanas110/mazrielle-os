@@ -18,7 +18,15 @@ function authRedirectUrl(): string | undefined {
 
 export function getSupabase(): SupabaseClient<Database> {
   if (!isSupabaseConfigured()) throw new Error('Supabase is not configured');
-  if (!client) client = createClient(supabaseUrl!, supabaseAnonKey!);
+  if (!client) {
+    client = createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
+      auth: {
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        persistSession: false,
+      },
+    });
+  }
   return client;
 }
 
