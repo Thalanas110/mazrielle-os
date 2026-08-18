@@ -49,6 +49,12 @@ function App() {
     if (!session) void lockVault();
   }, [session]);
 
+  useEffect(() => {
+    const handleClose = () => { void lockVault(); };
+    window.addEventListener('beforeunload', handleClose);
+    return () => window.removeEventListener('beforeunload', handleClose);
+  }, []);
+
   if (loading) return <LoadingScreen label="Checking session..." />;
   if (!session) return <AuthPage configured={isSupabaseConfigured()} />;
   return <VaultGate ownerId={session.user.id} />;
