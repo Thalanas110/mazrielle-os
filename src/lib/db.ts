@@ -44,6 +44,7 @@ async function initSchema(db: PGlite): Promise<void> {
     CREATE TABLE IF NOT EXISTS folders (
       id TEXT PRIMARY KEY,
       owner_id TEXT NOT NULL,
+      folder_id TEXT,
       payload TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
@@ -73,6 +74,7 @@ async function initSchema(db: PGlite): Promise<void> {
     CREATE TABLE IF NOT EXISTS tasks (
       id TEXT PRIMARY KEY,
       owner_id TEXT NOT NULL,
+      folder_id TEXT,
       payload TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
@@ -82,6 +84,7 @@ async function initSchema(db: PGlite): Promise<void> {
     CREATE TABLE IF NOT EXISTS income (
       id TEXT PRIMARY KEY,
       owner_id TEXT NOT NULL,
+      folder_id TEXT,
       payload TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
@@ -91,6 +94,7 @@ async function initSchema(db: PGlite): Promise<void> {
     CREATE TABLE IF NOT EXISTS activity_log (
       id TEXT PRIMARY KEY,
       owner_id TEXT NOT NULL,
+      folder_id TEXT,
       payload TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
@@ -157,4 +161,3 @@ export function genId(): string {
 export function now(): string {
   return new Date().toISOString();
 }
-
