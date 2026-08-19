@@ -1,10 +1,11 @@
 import type { EncryptedPayload, VaultEnvelope, WrappedKey } from './crypto.ts';
-import { SYNC_RECORD_TYPES, type EncryptedSyncRow, type SyncRecordType } from './syncTypes.ts';
+import { SYNC_RECORD_TYPES, type EncryptedSyncRow, type RemoteVaultMetadata, type SyncRecordType } from './syncTypes.ts';
 
 const ENCRYPTED_PAYLOAD_KEYS = ['algorithm', 'ciphertext', 'nonce', 'version'];
 const WRAPPED_KEY_KEYS = ['algorithm', 'ciphertext', 'iterations', 'kdf', 'memory_size', 'nonce', 'parallelism', 'salt'];
 const VAULT_ENVELOPE_KEYS = ['password', 'recovery', 'version'];
 const REMOTE_ROW_KEYS = ['created_at', 'deleted_at', 'folder_id', 'id', 'owner_id', 'payload', 'record_type', 'updated_at'];
+const REMOTE_METADATA_KEYS = ['created_at', 'envelope', 'owner_id', 'updated_at'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -59,6 +60,18 @@ export function assertVaultEnvelope(value: unknown): VaultEnvelope {
     throw new Error('Invalid vault envelope');
   }
   return value as unknown as VaultEnvelope;
+}
+
+export function assertRemoteVaultMetadata(value: unknown, ownerId: string): RemoteVaultMetadata {
+  if (!isRecord(value) || !hasExactKeys(value, REMOTE_METADATA_KEYS)) throw new Error('Invalid remote vault metadata');
+  if (value.owner_id !== ownerId) throw new Error('Remote vault metadata owner mismatch');
+  if (!isTimestamp(value.created_at) || !isTimestamp(value.updated_at)) throw new Error('Invalid remote vault metadata timestamp');
+  return {
+    owner_id: value.owner_id,
+    envelope: assertVaultEnvelope(value.envelope),
+    created_at: value.created_at,
+    updated_at: value.updated_at,
+  };
 }
 
 export function assertRemoteRecord(value: unknown, ownerId: string): EncryptedSyncRow {

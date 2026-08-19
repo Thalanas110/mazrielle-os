@@ -3,6 +3,7 @@ import test from 'node:test';
 import type { VaultEnvelope } from '../src/lib/crypto.ts';
 import {
   assertRemoteRecord,
+  assertRemoteVaultMetadata,
   assertVaultEnvelope,
   isEncryptedPayload,
 } from '../src/lib/syncValidation.ts';
@@ -72,6 +73,16 @@ test('rejects a vault envelope with extra fields', () => {
 
 test('accepts a remote row owned by the authenticated user', () => {
   assert.equal(assertRemoteRecord(remoteRow(), 'user-1').id, 'record-1');
+});
+
+test('accepts remote vault metadata owned by the authenticated user', () => {
+  const metadata = {
+    owner_id: 'user-1',
+    envelope: vaultEnvelope(),
+    created_at: '2026-08-19T00:00:00.000Z',
+    updated_at: '2026-08-19T00:00:00.000Z',
+  };
+  assert.deepEqual(assertRemoteVaultMetadata(metadata, 'user-1'), metadata);
 });
 
 test('rejects a remote row owned by a different user', () => {
