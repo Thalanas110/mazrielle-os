@@ -3,6 +3,8 @@ import { LayoutDashboard, KeyRound, StickyNote, SquareCheckBig, Calendar, Trendi
 import { useSettings } from '@/lib/useSettings';
 import { getRememberedVaultOwner, hasVault, isVaultUnlocked, lockVault, rememberVaultOwner } from '@/lib/vault';
 import { isSupabaseConfigured, signOut } from '@/lib/supabase';
+import { bootstrapVaultMetadata } from '@/lib/sync';
+import { useVaultSync } from '@/lib/useVaultSync';
 import { useAuthSession } from '@/lib/useAuthSession';
 import AuthPage from '@/components/AuthPage';
 import VaultSetup from '@/components/VaultSetup';
@@ -19,6 +21,7 @@ import Favorites from '@/views/Favorites';
 import PasswordGenerator from '@/views/PasswordGenerator';
 import ActivityLog from '@/views/ActivityLog';
 import SettingsView, { type SettingsTab } from '@/views/SettingsView';
+import SyncStatus from '@/components/SyncStatus';
 
 type ViewId = 'dashboard' | 'vault' | 'notes' | 'tasks' | 'calendar' | 'income' | 'folders' | 'favorites' | 'generator' | 'activity' | 'settings';
 
@@ -68,28 +71,53 @@ function App() {
   if (loading) return <LoadingScreen label="Checking session..." />;
   const ownerId = session?.user.id ?? rememberedOwner;
   if (!ownerId) return <AuthPage configured={isSupabaseConfigured()} />;
-  return <VaultGate ownerId={ownerId} email={session?.user.email ?? null} />;
+  return <VaultGate ownerId={ownerId} email={session?.user.email ?? null} sessionUserId={session?.user.id ?? null} />;
 }
 
-function VaultGate({ ownerId, email }: { ownerId: string; email: string | null }) {
+function VaultGate({ ownerId, email, sessionUserId }: { ownerId: string; email: string | null; sessionUserId: string | null }) {
   const [checking, setChecking] = useState(true);
   const [hasLocalVault, setHasLocalVault] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
+  const [preparationError, setPreparationError] = useState(false);
 
   const refresh = useCallback(async () => {
     setChecking(true);
-    const [localVault, isUnlocked] = await Promise.all([hasVault(ownerId), isVaultUnlocked()]);
-    setHasLocalVault(localVault);
-    setUnlocked(localVault && isUnlocked);
+    setPreparationError(false);
+    const localVault = await hasVault(ownerId);
+    if (!localVault && sessionUserId && isSupabaseConfigured()) {
+      try {
+        await bootstrapVaultMetadata(ownerId);
+      } catch {
+        setPreparationError(true);
+      }
+    }
+    const [finalLocalVault, isUnlocked] = await Promise.all([hasVault(ownerId), isVaultUnlocked()]);
+    setHasLocalVault(finalLocalVault);
+    setUnlocked(finalLocalVault && isUnlocked);
     setChecking(false);
-  }, [ownerId]);
+  }, [ownerId, sessionUserId]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => { if (!sessionUserId) setUnlocked(false); }, [sessionUserId]);
 
   if (checking) return <LoadingScreen label="Preparing local vault..." />;
+  if (preparationError && !hasLocalVault) return <PreparationError onRetry={() => void refresh()} />;
   if (!hasLocalVault) return <VaultSetup ownerId={ownerId} onReady={() => { setHasLocalVault(true); setUnlocked(true); }} />;
   if (!unlocked) return <VaultUnlock ownerId={ownerId} onUnlocked={() => setUnlocked(true)} />;
-  return <Workspace email={email} />;
+  return <Workspace email={email} syncOwnerId={sessionUserId === ownerId ? ownerId : null} />;
+}
+
+function PreparationError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#0b1018] px-4 text-white">
+      <section className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur-xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">Cloud vault unavailable</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight">Could not prepare the vault</h1>
+        <p className="mt-3 text-sm leading-6 text-white/55">Mazrielle OS could not check your encrypted cloud vault. Retry before creating a new local vault.</p>
+        <button className="mt-6 w-full rounded-xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-[#07111d]" onClick={onRetry}>Retry</button>
+      </section>
+    </main>
+  );
 }
 
 function LoadingScreen({ label }: { label: string }) {
@@ -103,8 +131,9 @@ function LoadingScreen({ label }: { label: string }) {
   );
 }
 
-function Workspace({ email }: { email: string | null }) {
+function Workspace({ email, syncOwnerId }: { email: string | null; syncOwnerId: string | null }) {
   const { settings, update, loaded } = useSettings();
+  const sync = useVaultSync(syncOwnerId, Boolean(syncOwnerId));
   const [view, setView] = useState<ViewId>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab | undefined>();
@@ -175,6 +204,8 @@ function Workspace({ email }: { email: string | null }) {
             </div>
           </div>
         </nav>
+
+        <SyncStatus controller={sync} />
 
         {/* User */}
         <div className="border-t border-gray-200 p-3 dark:border-gray-800">
