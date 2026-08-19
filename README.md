@@ -18,7 +18,7 @@ Mazrielle OS is a private, local-first workspace for credentials, notes, tasks, 
 3. A random 256-bit vault key is wrapped by Argon2id-derived keys from both the master password and recovery key.
 4. Vault payloads are encrypted with AES-256-GCM before they are written to PGlite.
 5. PGlite tables enable and force row-level security using the current opaque owner context.
-6. Only routing and sync metadata remains queryable: IDs, owner IDs, folder IDs, timestamps, and soft-delete state.
+6. Supabase stores encrypted record payloads plus routing and sync metadata; it never receives decrypted vault values.
 7. The desktop target keeps the active vault key in Rust memory. The browser/dev fallback uses Web Crypto; Android native crypto is reserved for the mobile implementation sprint.
 8. The vault locks on app close/restart. Supabase logout preserves the encrypted local vault and requires the master password to unlock it offline.
 9. The desktop WebView uses a restrictive CSP, notes preview as text, and does not load third-party favicon services.
@@ -62,6 +62,14 @@ Configuration: `http://localhost:5173`, `http://127.0.0.1:5173`, `tauri://localh
 `http://tauri.localhost`, `http://localhost`, and `capacitor://localhost`. Enable email/password
 authentication and email confirmations in Authentication > Providers. Do not commit `.env` or any
 Supabase access token.
+
+## Sync Behavior
+
+PGlite remains the local working store. After a successful local vault unlock, an authenticated
+Supabase session triggers one encrypted reconciliation immediately and then every 30 minutes while
+the app remains open and unlocked. The sync service transfers only AES-256-GCM envelopes and keeps
+deletion tombstones so records are not resurrected. Signing out stops cloud sync; the encrypted local
+vault remains available for offline use after a separate local unlock.
 
 ## Commands
 

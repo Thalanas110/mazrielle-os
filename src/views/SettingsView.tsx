@@ -211,7 +211,7 @@ export default function SettingsView({ settings, update, accountEmail, onSignOut
                 </div>
               </div>
               <p className="text-sm leading-6 text-gray-600 dark:text-gray-400">
-                Mazrielle OS is a private, local-first Life OS that brings passwords, notes, tasks, calendar, and income tracking into one secure workspace. Local vault content is encrypted before it reaches PGlite; future sync will require a fresh Supabase session.
+                Mazrielle OS is a private, local-first Life OS that brings passwords, notes, tasks, calendar, and income tracking into one secure workspace. Local vault content is encrypted before it reaches PGlite, and authenticated Supabase sync transfers encrypted envelopes immediately after unlock and every 30 minutes while the vault is open.
               </p>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">

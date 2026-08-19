@@ -189,7 +189,7 @@ export default function Dashboard({ onNavigate, settings }: DashboardProps) {
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Vault Protected</h2>
             </div>
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              Your data is stored locally and encrypted. No cloud sync required.
+              Your data stays encrypted in local PGlite. When signed in, encrypted envelopes sync every 30 minutes while the vault is unlocked.
             </p>
             <div className="mt-3 flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800/50">
               <span className="text-xs text-gray-500 dark:text-gray-400">Total Income</span>
