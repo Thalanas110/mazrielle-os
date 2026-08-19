@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { User, Palette, ShieldCheck, Database, Info, Check } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { User, Palette, ShieldCheck, Database, Info, Check, Clock } from 'lucide-react';
 import type { AppSettings } from '@/lib/types';
 import { PageHeader } from '@/components/PageHeader';
 import DocxImportPanel from '@/components/DocxImportPanel';
+import WorldClockSettings from '@/components/WorldClockSettings';
 
 const ACCENT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#6366f1'];
 const THEMES = [
@@ -15,27 +16,33 @@ const FONT_SIZES = [
   { id: 'large' as const, label: 'Large' },
 ];
 
-type Tab = 'account' | 'appearance' | 'security' | 'data' | 'about';
+export type SettingsTab = 'account' | 'appearance' | 'security' | 'data' | 'world-clocks' | 'about';
 
-export default function SettingsView({ settings, update, accountEmail, onSignOut }: {
+export default function SettingsView({ settings, update, accountEmail, onSignOut, initialTab }: {
   settings: AppSettings;
   update: (patch: Partial<AppSettings>) => Promise<void>;
   accountEmail?: string | null;
   onSignOut?: () => void;
+  initialTab?: SettingsTab;
 }) {
-  const [tab, setTab] = useState<Tab>('account');
+  const [tab, setTab] = useState<SettingsTab>(initialTab ?? 'account');
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
 
   const showSaved = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
 
-  const tabs: { id: Tab; label: string; icon: typeof User }[] = [
+  const tabs: { id: SettingsTab; label: string; icon: typeof User }[] = [
     { id: 'account', label: 'Account', icon: User },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'security', label: 'Security', icon: ShieldCheck },
     { id: 'data', label: 'Data', icon: Database },
+    { id: 'world-clocks', label: 'World Clocks', icon: Clock },
     { id: 'about', label: 'About', icon: Info },
   ];
 
@@ -181,6 +188,14 @@ export default function SettingsView({ settings, update, accountEmail, onSignOut
                 <button className="mt-3 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-red-600 active:scale-95" disabled>Reset Vault</button>
               </div>
             </div>
+          )}
+
+          {tab === 'world-clocks' && (
+            <WorldClockSettings
+              timeZones={settings.world_clocks}
+              onChange={timeZones => update({ world_clocks: timeZones })}
+              onSaved={showSaved}
+            />
           )}
 
           {tab === 'about' && (
