@@ -1,5 +1,6 @@
 import type { AppSettings } from './types.ts';
 import { DEFAULT_SETTINGS } from './types.ts';
+import { normalizeWorldClocks } from './worldClocks.ts';
 
 function asBoolean(value: unknown, fallback: boolean): boolean {
   if (typeof value === 'boolean') return value;
@@ -9,7 +10,7 @@ function asBoolean(value: unknown, fallback: boolean): boolean {
 }
 
 export function settingsFromRow(row: Record<string, unknown> | undefined): AppSettings {
-  if (!row) return { ...DEFAULT_SETTINGS };
+  if (!row) return { ...DEFAULT_SETTINGS, world_clocks: [...DEFAULT_SETTINGS.world_clocks] };
   return {
     display_name: String(row.display_name ?? DEFAULT_SETTINGS.display_name),
     theme: String(row.theme ?? DEFAULT_SETTINGS.theme) as AppSettings['theme'],
@@ -18,5 +19,6 @@ export function settingsFromRow(row: Record<string, unknown> | undefined): AppSe
     auto_lock: asBoolean(row.auto_lock, DEFAULT_SETTINGS.auto_lock),
     clipboard_clear: asBoolean(row.clipboard_clear, DEFAULT_SETTINGS.clipboard_clear),
     show_website_icons: asBoolean(row.show_website_icons, DEFAULT_SETTINGS.show_website_icons),
+    world_clocks: normalizeWorldClocks(row.world_clocks, DEFAULT_SETTINGS.world_clocks),
   };
 }

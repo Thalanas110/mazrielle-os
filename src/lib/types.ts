@@ -1,3 +1,5 @@
+import { getLocalTimeZone } from './worldClocks.ts';
+
 export type FolderType = 'password' | 'note';
 export type TaskStatus = 'todo' | 'in_progress' | 'completed';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -76,6 +78,7 @@ export interface AppSettings {
   auto_lock: boolean;
   clipboard_clear: boolean;
   show_website_icons: boolean;
+  world_clocks: string[];
 }
 
 export interface VaultMetadata {
@@ -93,4 +96,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   auto_lock: true,
   clipboard_clear: true,
   show_website_icons: true,
+  world_clocks: [getLocalTimeZone()],
 };
