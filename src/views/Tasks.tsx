@@ -6,10 +6,16 @@ import { PageHeader, EmptyState } from '@/components/PageHeader';
 import { Modal, ConfirmDialog } from '@/components/Modal';
 import { formatRelative, isOverdue } from '@/lib/utils';
 
-const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
-  { id: 'todo', label: 'To Do', color: 'bg-gray-400' },
-  { id: 'in_progress', label: 'In Progress', color: 'bg-blue-500' },
-  { id: 'completed', label: 'Completed', color: 'bg-green-500' },
+const COLUMN_COVERS: Record<TaskStatus, string> = {
+  todo: '/task-covers/todo.png',
+  in_progress: '/task-covers/in-progress.png',
+  completed: '/task-covers/completed.png',
+};
+
+const COLUMNS: { id: TaskStatus; label: string; color: string; coverFallback: string }[] = [
+  { id: 'todo', label: 'To Do', color: 'bg-gray-400', coverFallback: 'bg-gray-400' },
+  { id: 'in_progress', label: 'In Progress', color: 'bg-blue-500', coverFallback: 'bg-blue-500' },
+  { id: 'completed', label: 'Completed', color: 'bg-green-500', coverFallback: 'bg-green-500' },
 ];
 
 const PRIORITY_COLORS: Record<TaskPriority, string> = {
@@ -17,6 +23,23 @@ const PRIORITY_COLORS: Record<TaskPriority, string> = {
   medium: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
   low: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
 };
+
+function TaskColumnCover({ src, fallbackClass }: { src: string; fallbackClass: string }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  return (
+    <div className={`h-24 w-full ${fallbackClass}`}>
+      {!imageFailed && src && (
+        <img
+          src={src}
+          alt=""
+          className="h-full w-full object-cover"
+          onError={() => setImageFailed(true)}
+        />
+      )}
+    </div>
+  );
+}
 
 export default function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -49,11 +72,14 @@ export default function Tasks() {
         {COLUMNS.map(col => {
           const colTasks = tasks.filter(t => t.status === col.id);
           return (
-            <div key={col.id} className="flex flex-col">
-              <div className="mb-2 flex items-center gap-2 px-1">
-                <div className={`h-2 w-2 rounded-full ${col.color}`} />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{col.label}</h2>
-                <span className="text-xs text-gray-400">({colTasks.length})</span>
+            <div key={col.id} className="flex flex-col gap-2">
+              <div className="card overflow-hidden">
+                <TaskColumnCover src={COLUMN_COVERS[col.id]} fallbackClass={col.coverFallback} />
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <div className={`h-2 w-2 rounded-full ${col.color}`} />
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{col.label}</h2>
+                  <span className="text-xs text-gray-400">({colTasks.length})</span>
+                </div>
               </div>
               <div className="space-y-2">
                 {colTasks.length === 0 ? (
