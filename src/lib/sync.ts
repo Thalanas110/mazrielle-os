@@ -28,6 +28,13 @@ export class SyncAuthenticationError extends Error {
   }
 }
 
+export class SyncCancelledError extends Error {
+  constructor() {
+    super('Sync run was cancelled');
+    this.name = 'SyncCancelledError';
+  }
+}
+
 export class VaultMetadataConflictError extends Error {
   constructor() {
     super('vault metadata conflict');
@@ -39,6 +46,10 @@ export interface SyncDependencies {
   store: SyncStore;
   transport: SyncTransport;
   isUnlocked: () => boolean | Promise<boolean>;
+}
+
+export interface SyncRunOptions {
+  isActive?: () => boolean;
 }
 
 function stableSerialize(value: unknown): string {
@@ -78,6 +89,10 @@ async function readMetadataPair(ownerId: string, dependencies: SyncDependencies)
   return { local, remote };
 }
 
+function ensureSyncRunActive(options?: SyncRunOptions): void {
+  if (options?.isActive && !options.isActive()) throw new SyncCancelledError();
+}
+
 export async function bootstrapVaultMetadata(ownerId: string, dependencies?: SyncDependencies): Promise<void> {
   const resolved = resolveDependencies(dependencies);
   await requireAuthenticatedOwner(ownerId, resolved.transport);
@@ -85,34 +100,48 @@ export async function bootstrapVaultMetadata(ownerId: string, dependencies?: Syn
   if (!local && remote) await resolved.store.saveVaultMetadata(remote);
 }
 
-export async function synchronizeVault(ownerId: string, dependencies?: SyncDependencies): Promise<SyncResult> {
+export async function synchronizeVault(ownerId: string, dependencies?: SyncDependencies, options?: SyncRunOptions): Promise<SyncResult> {
   const resolved = resolveDependencies(dependencies);
+  ensureSyncRunActive(options);
   if (!await resolved.isUnlocked()) throw new SyncLockedError();
+  ensureSyncRunActive(options);
   await requireAuthenticatedOwner(ownerId, resolved.transport);
 
   let { local: localMetadata, remote: remoteMetadata } = await readMetadataPair(ownerId, resolved);
+  ensureSyncRunActive(options);
   if (!localMetadata && remoteMetadata) {
+    ensureSyncRunActive(options);
     await resolved.store.saveVaultMetadata(remoteMetadata);
     localMetadata = remoteMetadata;
   }
   if (!localMetadata) throw new Error('Local vault metadata is missing');
   if (!remoteMetadata) {
+    ensureSyncRunActive(options);
     await resolved.transport.upsertVaultMetadata(localMetadata);
     remoteMetadata = localMetadata;
   }
 
+  ensureSyncRunActive(options);
   const localRows = await resolved.store.listRecords(ownerId);
+  ensureSyncRunActive(options);
   const remoteRows = await resolved.transport.listRecords(ownerId);
+  ensureSyncRunActive(options);
   const initialPlan = buildMergePlan(localRows, remoteRows);
   if (initialPlan.pushToRemote.length > 0) {
+    ensureSyncRunActive(options);
     await resolved.transport.upsertRecords(initialPlan.pushToRemote);
   }
 
+  ensureSyncRunActive(options);
   const authoritativeRemoteRows = initialPlan.pushToRemote.length > 0
     ? await resolved.transport.listRecords(ownerId)
     : remoteRows;
+  ensureSyncRunActive(options);
   const finalPlan = buildMergePlan(localRows, authoritativeRemoteRows);
-  for (const row of finalPlan.applyToLocal) await resolved.store.upsertRecord(row);
+  for (const row of finalPlan.applyToLocal) {
+    ensureSyncRunActive(options);
+    await resolved.store.upsertRecord(row);
+  }
 
   return {
     pushed: initialPlan.pushToRemote.length,

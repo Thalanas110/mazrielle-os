@@ -3,9 +3,11 @@ import { isSupabaseConfigured } from './supabase.ts';
 import {
   synchronizeVault,
   SyncAuthenticationError,
+  SyncCancelledError,
   SyncUnavailableError,
   VaultMetadataConflictError,
 } from './sync.ts';
+import { createSyncRunGuard } from './syncRunGuard.ts';
 import { startSyncScheduler } from './syncScheduler.ts';
 import type { SyncResult, SyncStatus } from './syncTypes.ts';
 
@@ -30,6 +32,7 @@ export function useVaultSync(ownerId: string | null, enabled: boolean): VaultSyn
   const [lastResult, setLastResult] = useState<SyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef<Promise<void> | null>(null);
+  const runGuard = useRef(createSyncRunGuard());
 
   const runSync = useCallback(async () => {
     if (inFlight.current) return inFlight.current;
@@ -39,15 +42,20 @@ export function useVaultSync(ownerId: string | null, enabled: boolean): VaultSyn
       return;
     }
 
+    const runId = runGuard.current.begin();
+    const isActive = () => runGuard.current.isCurrent(runId);
     const operation = (async () => {
+      if (!isActive()) return;
       setStatus('syncing');
       setError(null);
       try {
-        const result = await synchronizeVault(ownerId);
+        const result = await synchronizeVault(ownerId, undefined, { isActive });
+        if (!isActive()) return;
         setLastResult(result);
         setLastSyncedAt(result.lastSyncedAt);
         setStatus('synced');
       } catch (syncError) {
+        if (syncError instanceof SyncCancelledError || !isActive()) return;
         setStatus(syncError instanceof VaultMetadataConflictError ? 'conflict' : 'error');
         setError(errorMessage(syncError));
       }
@@ -61,13 +69,21 @@ export function useVaultSync(ownerId: string | null, enabled: boolean): VaultSyn
   }, [enabled, ownerId]);
 
   useEffect(() => {
+    const currentGuard = runGuard.current;
     if (!enabled || !ownerId) {
+      currentGuard.invalidate();
+      inFlight.current = null;
       setStatus('local');
       setError(null);
       return undefined;
     }
     void runSync();
-    return startSyncScheduler(runSync);
+    const stop = startSyncScheduler(runSync);
+    return () => {
+      currentGuard.invalidate();
+      inFlight.current = null;
+      stop();
+    };
   }, [enabled, ownerId, runSync]);
 
   return { status, lastSyncedAt, lastResult, error, retry: runSync };

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../src/lib/supabase.types.ts';
-import { bootstrapVaultMetadata, synchronizeVault, type SyncDependencies } from '../src/lib/sync.ts';
+import { bootstrapVaultMetadata, SyncCancelledError, synchronizeVault, type SyncDependencies } from '../src/lib/sync.ts';
 import { createSupabaseSyncTransport } from '../src/lib/syncTransport.ts';
 import type { EncryptedSyncRow, RemoteVaultMetadata } from '../src/lib/syncTypes.ts';
 
@@ -190,4 +190,26 @@ test('does not call transport while the vault is locked', async () => {
   const fixture = fakeSyncDependencies({ isUnlocked: () => false });
   await assert.rejects(() => synchronizeVault('user-1', fixture.dependencies), /locked/);
   assert.equal(fixture.calls.includes('get-session'), false);
+});
+
+test('does not apply a remote result after the sync run is invalidated', async () => {
+  const fixture = fakeSyncDependencies({
+    localRows: [encryptedRow({ updated_at: '2026-08-19T00:01:00.000Z' })],
+    remoteRows: [encryptedRow({ updated_at: '2026-08-19T00:02:00.000Z', payload: encryptedPayload('remote') })],
+  });
+  let releaseRemoteRead: (() => void) | undefined;
+  let remoteReadStarted: (() => void) | undefined;
+  fixture.transport.listRecords = async () => {
+    remoteReadStarted?.();
+    await new Promise<void>(resolve => { releaseRemoteRead = resolve; });
+    return [encryptedRow({ updated_at: '2026-08-19T00:02:00.000Z', payload: encryptedPayload('remote') })];
+  };
+  let active = true;
+  const started = new Promise<void>(resolve => { remoteReadStarted = resolve; });
+  const sync = synchronizeVault('user-1', fixture.dependencies, { isActive: () => active });
+  await started;
+  active = false;
+  releaseRemoteRead?.();
+  await assert.rejects(sync, SyncCancelledError);
+  assert.equal(fixture.getLocalRows()[0].payload.ciphertext, 'ciphertext');
 });
