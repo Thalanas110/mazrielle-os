@@ -51,6 +51,22 @@ test('does not change identical rows', () => {
   assert.equal(plan.applyToLocal.length, 0);
 });
 
+test('treats equivalent timestamp formats as the same instant', () => {
+  const plan = buildMergePlan(
+    [row('record-1', '2026-08-19T00:00:00.000Z')],
+    [row('record-1', '2026-08-19T00:00:00+00:00')],
+  );
+  assert.equal(plan.unchanged, 1);
+});
+
+test('orders timestamp offsets by their numeric instant', () => {
+  const plan = buildMergePlan(
+    [row('record-1', '2026-08-19T01:00:00+01:00')],
+    [row('record-1', '2026-08-19T00:30:00Z')],
+  );
+  assert.deepEqual(plan.applyToLocal.map(item => item.id), ['record-1']);
+});
+
 test('rejects equal timestamps with different ciphertext', () => {
   assert.throws(
     () => buildMergePlan([row('record-1')], [row('record-1', BASE_TIME, null, 'different')]),

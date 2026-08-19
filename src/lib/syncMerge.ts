@@ -23,8 +23,23 @@ function stableSerialize(value: unknown): string {
   return `{${Object.keys(object).sort().map(key => `${JSON.stringify(key)}:${stableSerialize(object[key])}`).join(',')}}`;
 }
 
+function canonicalTimestamp(value: string): string {
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) throw new Error('Invalid sync timestamp');
+  return new Date(parsed).toISOString();
+}
+
+function normalizeRow(row: EncryptedSyncRow): EncryptedSyncRow {
+  return {
+    ...row,
+    created_at: canonicalTimestamp(row.created_at),
+    updated_at: canonicalTimestamp(row.updated_at),
+    deleted_at: row.deleted_at === null ? null : canonicalTimestamp(row.deleted_at),
+  };
+}
+
 function rowsEqual(left: EncryptedSyncRow, right: EncryptedSyncRow): boolean {
-  return stableSerialize(left) === stableSerialize(right);
+  return stableSerialize(normalizeRow(left)) === stableSerialize(normalizeRow(right));
 }
 
 export function buildMergePlan(localRows: EncryptedSyncRow[], remoteRows: EncryptedSyncRow[]): MergePlan {
@@ -44,9 +59,12 @@ export function buildMergePlan(localRows: EncryptedSyncRow[], remoteRows: Encryp
       unchanged += 1;
       continue;
     }
-    if (localRow.updated_at > remoteRow.updated_at) {
+    const localUpdatedAt = Date.parse(localRow.updated_at);
+    const remoteUpdatedAt = Date.parse(remoteRow.updated_at);
+    if (!Number.isFinite(localUpdatedAt) || !Number.isFinite(remoteUpdatedAt)) throw new Error('Invalid sync timestamp');
+    if (localUpdatedAt > remoteUpdatedAt) {
       pushToRemote.push(localRow);
-    } else if (localRow.updated_at < remoteRow.updated_at) {
+    } else if (localUpdatedAt < remoteUpdatedAt) {
       applyToLocal.push(remoteRow);
     } else {
       throw new SyncConflictError(localRow.id);
