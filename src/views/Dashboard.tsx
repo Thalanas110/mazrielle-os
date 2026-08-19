@@ -26,8 +26,8 @@ export default function Dashboard({ onNavigate, settings }: DashboardProps) {
     });
   }, []);
 
-  const overdueTasks = tasks.filter(t => t.status !== 'completed' && isOverdue(t.due_date));
-  const upcomingTasks = tasks.filter(t => t.status !== 'completed' && !isOverdue(t.due_date)).slice(0, 5);
+  const overdueTasks = tasks.filter(t => t.status !== 'done' && isOverdue(t.due_date));
+  const upcomingTasks = tasks.filter(t => t.status !== 'done' && !isOverdue(t.due_date)).slice(0, 5);
   const recentCreds = creds.slice(0, 4);
   const now = new Date();
   const monthIncome = income.filter(i => {
@@ -39,7 +39,7 @@ export default function Dashboard({ onNavigate, settings }: DashboardProps) {
   const stats = [
     { label: 'Credentials', value: creds.length, icon: KeyRound, color: 'from-blue-500 to-blue-600', view: 'vault' },
     { label: 'Notes', value: notes.length, icon: StickyNote, color: 'from-amber-500 to-amber-600', view: 'notes' },
-    { label: 'Tasks', value: tasks.filter(t => t.status !== 'completed').length, icon: SquareCheckBig, color: 'from-green-500 to-green-600', view: 'tasks' },
+    { label: 'Tasks', value: tasks.filter(t => t.status !== 'done').length, icon: SquareCheckBig, color: 'from-green-500 to-green-600', view: 'tasks' },
     { label: 'This Month', value: formatCurrency(monthIncome, 'PHP'), icon: TrendingUp, color: 'from-purple-500 to-purple-600', view: 'income' },
   ];
 

@@ -2,9 +2,10 @@ import { getDb, getVaultOwner } from './db';
 import { getVaultCryptoProvider } from './platformCrypto';
 import { createOwnerSettingsId } from './vault';
 import { clearRecords, getRecord, insertRecord, insertSettings, listRecords, softDeleteRecord, updateRecord } from './encryptedRepository';
-import type { ActivityLog, AppSettings, Credential, Folder, Income, Note, Task } from './types';
+import type { ActivityLog, AppSettings, Credential, Folder, Income, Note, Task, TaskStatus } from './types';
 import { DEFAULT_SETTINGS as DEFAULTS } from './types';
 import { settingsFromRow } from './settings';
+import { normalizeTaskStatus } from './taskStatuses.ts';
 
 function withMetadata<T extends object>(record: { id: string; folder_id: string | null; created_at: string; updated_at: string; value: T }): T & Pick<typeof record, 'id' | 'folder_id' | 'created_at' | 'updated_at'> {
   return { ...record.value, id: record.id, folder_id: record.folder_id, created_at: record.created_at, updated_at: record.updated_at };
@@ -119,13 +120,20 @@ export async function deleteNote(id: string): Promise<void> {
   await logActivity('Notes', 'Deleted', id);
 }
 
-export async function getTasks(status?: string): Promise<Task[]> {
+export async function getTasks(status?: TaskStatus): Promise<Task[]> {
   const records = await listRecords<Task>('tasks');
-  return sortBy(records.filter(r => !status || r.value.status === status).map(withMetadata), (a, b) => ({ high: 1, medium: 2, low: 3 }[a.priority] - ({ high: 1, medium: 2, low: 3 }[b.priority]) || (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999')));
+  const tasks = records.map(record => ({
+    ...withMetadata(record),
+    status: normalizeTaskStatus(String(record.value.status ?? '')),
+  }));
+  return sortBy(
+    tasks.filter(task => !status || task.status === status),
+    (a, b) => ({ high: 1, medium: 2, low: 3 }[a.priority] - ({ high: 1, medium: 2, low: 3 }[b.priority]) || (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999')),
+  );
 }
 
 export async function createTask(data: Partial<Task>): Promise<Task> {
-  const value: Task = { id: '', title: data.title ?? '', description: data.description ?? '', status: data.status ?? 'todo', priority: data.priority ?? 'medium', due_date: data.due_date ?? null, tags: data.tags ?? '', created_at: '', updated_at: '' };
+  const value: Task = { id: '', title: data.title ?? '', description: data.description ?? '', status: data.status ?? 'to_do', priority: data.priority ?? 'medium', due_date: data.due_date ?? null, tags: data.tags ?? '', created_at: '', updated_at: '' };
   const record = await insertRecord('tasks', value);
   const task = withMetadata(record);
   await logActivity('Tasks', 'Created', task.title);

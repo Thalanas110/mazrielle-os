@@ -246,7 +246,7 @@ function QuickAddTask({ defaultDate, onClose, onSave }: {
 
   const handleSave = async () => {
     if (!title.trim()) return;
-    await createTask({ title, due_date: dueDate, status: 'todo', priority: 'medium', description: '', tags: '' });
+    await createTask({ title, due_date: dueDate, status: 'to_do', priority: 'medium', description: '', tags: '' });
     onSave();
   };
 
