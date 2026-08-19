@@ -4,18 +4,12 @@ import { getCredentials, getNotes, getTasks, getIncome, getActivityLog } from '@
 import type { Credential, Note, Task, Income, ActivityLog } from '@/lib/types';
 import { formatRelative, isOverdue, formatCurrency, formatTime } from '@/lib/utils';
 import type { AppSettings } from '@/lib/types';
+import { formatWorldClockTime, getWorldClockOption, type WorldClockOption } from '@/lib/worldClocks';
 
 interface DashboardProps {
   onNavigate: (view: string) => void;
   settings: AppSettings;
 }
-
-const WORLD_CLOCKS = [
-  { city: 'Manila', tz: 'Asia/Manila' },
-  { city: 'New York', tz: 'America/New_York' },
-  { city: 'London', tz: 'Europe/London' },
-  { city: 'Tokyo', tz: 'Asia/Tokyo' },
-];
 
 export default function Dashboard({ onNavigate, settings }: DashboardProps) {
   const [creds, setCreds] = useState<Credential[]>([]);
@@ -49,17 +43,15 @@ export default function Dashboard({ onNavigate, settings }: DashboardProps) {
     { label: 'This Month', value: formatCurrency(monthIncome, 'PHP'), icon: TrendingUp, color: 'from-purple-500 to-purple-600', view: 'income' },
   ];
 
-  const [clocks, setClocks] = useState<string[]>([]);
+  const [clockNow, setClockNow] = useState(() => new Date());
   useEffect(() => {
-    const update = () => {
-      setClocks(WORLD_CLOCKS.map(c => {
-        return new Date().toLocaleTimeString('en-US', { timeZone: c.tz, hour: '2-digit', minute: '2-digit', hour12: true });
-      }));
-    };
-    update();
-    const interval = setInterval(update, 1000);
+    const interval = setInterval(() => setClockNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const selectedClocks = settings.world_clocks
+    .map(timeZone => getWorldClockOption(timeZone, clockNow))
+    .filter((clock): clock is WorldClockOption => Boolean(clock));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
@@ -169,10 +161,22 @@ export default function Dashboard({ onNavigate, settings }: DashboardProps) {
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white">World Clocks</h2>
             </div>
             <div className="space-y-1 p-2">
-              {WORLD_CLOCKS.map((c, i) => (
-                <div key={c.city} className="flex items-center justify-between rounded-lg px-3 py-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{c.city}</span>
-                  <span className="text-sm font-medium tabular-nums text-gray-900 dark:text-white">{clocks[i]}</span>
+              {selectedClocks.length === 0 ? (
+                <div className="px-3 py-4 text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No clocks selected</p>
+                  <button onClick={() => onNavigate('settings-world-clocks')} className="btn-ghost mt-2 text-xs">
+                    Add a city in Settings
+                  </button>
+                </div>
+              ) : selectedClocks.map(clock => (
+                <div key={clock.timeZone} className="flex items-center justify-between rounded-lg px-3 py-2">
+                  <div className="min-w-0">
+                    <span className="block truncate text-sm text-gray-600 dark:text-gray-400">{clock.city}</span>
+                    <span className="block text-[10px] text-gray-400">{clock.utcOffset}</span>
+                  </div>
+                  <span className="text-sm font-medium tabular-nums text-gray-900 dark:text-white">
+                    {formatWorldClockTime(clock.timeZone, clockNow)}
+                  </span>
                 </div>
               ))}
             </div>

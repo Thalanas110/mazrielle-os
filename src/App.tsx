@@ -18,7 +18,7 @@ import Folders from '@/views/Folders';
 import Favorites from '@/views/Favorites';
 import PasswordGenerator from '@/views/PasswordGenerator';
 import ActivityLog from '@/views/ActivityLog';
-import SettingsView from '@/views/SettingsView';
+import SettingsView, { type SettingsTab } from '@/views/SettingsView';
 
 type ViewId = 'dashboard' | 'vault' | 'notes' | 'tasks' | 'calendar' | 'income' | 'folders' | 'favorites' | 'generator' | 'activity' | 'settings';
 
@@ -107,13 +107,24 @@ function Workspace({ email }: { email: string | null }) {
   const { settings, update, loaded } = useSettings();
   const [view, setView] = useState<ViewId>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab | undefined>();
+
+  const navigate = useCallback((target: string) => {
+    if (target === 'settings-world-clocks') {
+      setSettingsTab('world-clocks');
+      setView('settings');
+      return;
+    }
+    setSettingsTab(undefined);
+    setView(target as ViewId);
+  }, []);
 
   if (!loaded) return <LoadingScreen label="Loading Mazrielle OS..." />;
 
   const navItem = (item: { id: ViewId; label: string; icon: typeof LayoutDashboard }) => (
     <button
       key={item.id}
-      onClick={() => { setView(item.id); setSidebarOpen(false); }}
+      onClick={() => { setSettingsTab(undefined); setView(item.id); setSidebarOpen(false); }}
       className={`sidebar-item w-full ${view === item.id ? 'sidebar-item-active' : ''}`}
     >
       <item.icon className="h-[18px] w-[18px] shrink-0" />
@@ -167,7 +178,7 @@ function Workspace({ email }: { email: string | null }) {
 
         {/* User */}
         <div className="border-t border-gray-200 p-3 dark:border-gray-800">
-          <button onClick={() => { setView('settings'); setSidebarOpen(false); }} className="flex w-full items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button onClick={() => { setSettingsTab(undefined); setView('settings'); setSidebarOpen(false); }} className="flex w-full items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-semibold text-white">
               {getInitials(settings.display_name)}
             </div>
@@ -197,7 +208,7 @@ function Workspace({ email }: { email: string | null }) {
         {/* Content */}
         <main className="flex-1 overflow-y-auto scrollbar-thin">
           <div className="animate-fade-in" key={view}>
-            {view === 'dashboard' && <Dashboard onNavigate={target => setView(target as ViewId)} settings={settings} />}
+            {view === 'dashboard' && <Dashboard onNavigate={navigate} settings={settings} />}
             {view === 'vault' && <Vault />}
             {view === 'notes' && <Notes />}
             {view === 'tasks' && <Tasks />}
@@ -207,7 +218,7 @@ function Workspace({ email }: { email: string | null }) {
             {view === 'favorites' && <Favorites />}
             {view === 'generator' && <PasswordGenerator />}
             {view === 'activity' && <ActivityLog />}
-            {view === 'settings' && <SettingsView settings={settings} update={update} accountEmail={email} onSignOut={email ? () => void signOut() : undefined} />}
+            {view === 'settings' && <SettingsView settings={settings} update={update} accountEmail={email} onSignOut={email ? () => void signOut() : undefined} initialTab={settingsTab} />}
           </div>
         </main>
       </div>
