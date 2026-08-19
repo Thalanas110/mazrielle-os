@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseLocalEncryptedRow } from '../src/lib/syncLocalRepository.ts';
+import { getLocalSyncShape, parseLocalEncryptedRow } from '../src/lib/syncLocalRepository.ts';
 
 function encryptedPayload() {
   return {
@@ -35,6 +35,11 @@ test('maps app settings without a folder', () => {
   const row = parseLocalEncryptedRow('app_settings', rawRow());
   assert.equal(row.record_type, 'app_settings');
   assert.equal(row.folder_id, null);
+});
+
+test('uses the app settings table shape without a folder column', () => {
+  assert.equal(getLocalSyncShape('app_settings').hasFolderId, false);
+  assert.equal(getLocalSyncShape('credentials').hasFolderId, true);
 });
 
 test('rejects malformed local ciphertext before it can be synchronized', () => {

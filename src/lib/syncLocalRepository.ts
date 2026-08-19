@@ -31,6 +31,10 @@ const TABLE_BY_RECORD_TYPE: Record<SyncRecordType, LocalSyncTable> = {
   app_settings: 'app_settings',
 };
 
+export function getLocalSyncShape(table: LocalSyncTable): { hasFolderId: boolean } {
+  return { hasFolderId: table !== 'app_settings' };
+}
+
 function assertOwner(ownerId: string): void {
   if (!ownerId.trim()) throw new Error('A sync owner is required');
 }
@@ -66,8 +70,11 @@ async function listRecords(ownerId: string): Promise<EncryptedSyncRow[]> {
   const db = await getDb();
   const rows: EncryptedSyncRow[] = [];
   for (const table of LOCAL_SYNC_TABLES) {
+    const columns = getLocalSyncShape(table).hasFolderId
+      ? 'id, owner_id, folder_id, payload, created_at, updated_at, deleted_at'
+      : 'id, owner_id, payload, created_at, updated_at, deleted_at';
     const result = await db.query<RawLocalSyncRow>(
-      `SELECT id, owner_id, folder_id, payload, created_at, updated_at, deleted_at FROM ${table} WHERE owner_id=$1`,
+      `SELECT ${columns} FROM ${table} WHERE owner_id=$1`,
       [ownerId],
     );
     rows.push(...queryRows(result).map(row => parseLocalEncryptedRow(table, row)));
@@ -80,17 +87,31 @@ async function upsertRecord(row: EncryptedSyncRow): Promise<void> {
   const validated = assertRemoteRecord(row, row.owner_id);
   const table = TABLE_BY_RECORD_TYPE[validated.record_type];
   const db = await getDb();
+  if (getLocalSyncShape(table).hasFolderId) {
+    await db.query(
+      `INSERT INTO ${table} (id, owner_id, folder_id, payload, created_at, updated_at, deleted_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       ON CONFLICT (id) DO UPDATE SET
+         owner_id=excluded.owner_id,
+         folder_id=excluded.folder_id,
+         payload=excluded.payload,
+         created_at=excluded.created_at,
+         updated_at=excluded.updated_at,
+         deleted_at=excluded.deleted_at`,
+      [validated.id, validated.owner_id, validated.folder_id, JSON.stringify(validated.payload), validated.created_at, validated.updated_at, validated.deleted_at],
+    );
+    return;
+  }
   await db.query(
-    `INSERT INTO ${table} (id, owner_id, folder_id, payload, created_at, updated_at, deleted_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7)
+    `INSERT INTO ${table} (id, owner_id, payload, created_at, updated_at, deleted_at)
+     VALUES ($1,$2,$3,$4,$5,$6)
      ON CONFLICT (id) DO UPDATE SET
        owner_id=excluded.owner_id,
-       folder_id=excluded.folder_id,
        payload=excluded.payload,
        created_at=excluded.created_at,
        updated_at=excluded.updated_at,
        deleted_at=excluded.deleted_at`,
-    [validated.id, validated.owner_id, validated.folder_id, JSON.stringify(validated.payload), validated.created_at, validated.updated_at, validated.deleted_at],
+    [validated.id, validated.owner_id, JSON.stringify(validated.payload), validated.created_at, validated.updated_at, validated.deleted_at],
   );
 }
 
