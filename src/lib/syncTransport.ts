@@ -10,7 +10,7 @@ const RECORD_BATCH_SIZE = 100;
 
 type SupabaseDatabaseClient = SupabaseClient<Database>;
 
-function throwTransportError(message: string, _error: unknown): never {
+function throwTransportError(message: string): never {
   throw new Error(message);
 }
 
@@ -18,7 +18,7 @@ export function createSupabaseSyncTransport(client: SupabaseDatabaseClient = get
   return {
     async getAuthenticatedOwner() {
       const { data, error } = await client.auth.getSession();
-      if (error) throwTransportError('Could not read Supabase session', error);
+      if (error) throwTransportError('Could not read Supabase session');
       return data.session?.user.id ?? null;
     },
 
@@ -28,7 +28,7 @@ export function createSupabaseSyncTransport(client: SupabaseDatabaseClient = get
         .select(METADATA_COLUMNS)
         .eq('owner_id', ownerId)
         .maybeSingle();
-      if (error) throwTransportError('Could not read remote vault metadata', error);
+      if (error) throwTransportError('Could not read remote vault metadata');
       if (!data) return null;
       return assertRemoteVaultMetadata(data, ownerId);
     },
@@ -42,7 +42,7 @@ export function createSupabaseSyncTransport(client: SupabaseDatabaseClient = get
         updated_at: validated.updated_at,
       };
       const { error } = await client.from('vault_metadata').upsert(metadataInsert, { onConflict: 'owner_id' });
-      if (error) throwTransportError('Could not write remote vault metadata', error);
+      if (error) throwTransportError('Could not write remote vault metadata');
     },
 
     async listRecords(ownerId: string) {
@@ -50,7 +50,7 @@ export function createSupabaseSyncTransport(client: SupabaseDatabaseClient = get
         .from('vault_records')
         .select(RECORD_COLUMNS)
         .eq('owner_id', ownerId);
-      if (error) throwTransportError('Could not read remote vault records', error);
+      if (error) throwTransportError('Could not read remote vault records');
       return (data ?? []).map(row => assertRemoteRecord(row, ownerId));
     },
 
@@ -70,7 +70,7 @@ export function createSupabaseSyncTransport(client: SupabaseDatabaseClient = get
           };
         });
         const { error } = await client.from('vault_records').upsert(batch, { onConflict: 'id' });
-        if (error) throwTransportError('Could not write remote vault records', error);
+        if (error) throwTransportError('Could not write remote vault records');
       }
     },
   };

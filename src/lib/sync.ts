@@ -3,7 +3,7 @@ import { isSupabaseConfigured } from './supabase.ts';
 import { createLocalSyncStore } from './syncLocalRepository.ts';
 import { buildMergePlan } from './syncMerge.ts';
 import { createSupabaseSyncTransport } from './syncTransport.ts';
-import type { EncryptedSyncRow, RemoteVaultMetadata, SyncResult, SyncStore, SyncTransport } from './syncTypes.ts';
+import type { RemoteVaultMetadata, SyncResult, SyncStore, SyncTransport } from './syncTypes.ts';
 
 export const SYNC_INTERVAL_MS = 30 * 60 * 1000;
 

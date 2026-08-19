@@ -56,13 +56,13 @@ export function parseLocalEncryptedRow(table: LocalSyncTable, row: RawLocalSyncR
   }, row.owner_id);
 }
 
-async function useOwner(ownerId: string): Promise<void> {
+async function setSyncOwner(ownerId: string): Promise<void> {
   assertOwner(ownerId);
   await setVaultOwner(ownerId);
 }
 
 async function listRecords(ownerId: string): Promise<EncryptedSyncRow[]> {
-  await useOwner(ownerId);
+  await setSyncOwner(ownerId);
   const db = await getDb();
   const rows: EncryptedSyncRow[] = [];
   for (const table of LOCAL_SYNC_TABLES) {
@@ -76,7 +76,7 @@ async function listRecords(ownerId: string): Promise<EncryptedSyncRow[]> {
 }
 
 async function upsertRecord(row: EncryptedSyncRow): Promise<void> {
-  await useOwner(row.owner_id);
+  await setSyncOwner(row.owner_id);
   const validated = assertRemoteRecord(row, row.owner_id);
   const table = TABLE_BY_RECORD_TYPE[validated.record_type];
   const db = await getDb();
@@ -95,7 +95,7 @@ async function upsertRecord(row: EncryptedSyncRow): Promise<void> {
 }
 
 async function getVaultMetadata(ownerId: string): Promise<RemoteVaultMetadata | null> {
-  await useOwner(ownerId);
+  await setSyncOwner(ownerId);
   const db = await getDb();
   const result = await db.query<Record<string, unknown>>(
     'SELECT owner_id, envelope, created_at, updated_at FROM vault_meta WHERE owner_id=$1',
@@ -118,7 +118,7 @@ async function getVaultMetadata(ownerId: string): Promise<RemoteVaultMetadata | 
 }
 
 async function saveVaultMetadata(metadata: RemoteVaultMetadata): Promise<void> {
-  await useOwner(metadata.owner_id);
+  await setSyncOwner(metadata.owner_id);
   const validated = assertRemoteVaultMetadata(metadata, metadata.owner_id);
   const db = await getDb();
   await db.query(
