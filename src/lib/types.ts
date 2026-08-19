@@ -1,7 +1,7 @@
 import { getLocalTimeZone } from './worldClocks.ts';
 
 export type FolderType = 'password' | 'note';
-export type TaskStatus = 'todo' | 'in_progress' | 'completed';
+export type TaskStatus = 'future_plans' | 'current_sprint' | 'to_do' | 'doing' | 'on_hold' | 'blocked' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high';
 
 export interface Folder {
