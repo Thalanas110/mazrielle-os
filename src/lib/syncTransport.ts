@@ -7,6 +7,7 @@ import type { EncryptedSyncRow, RemoteVaultMetadata, SyncTransport } from './syn
 const RECORD_COLUMNS = 'id,owner_id,record_type,folder_id,payload,created_at,updated_at,deleted_at';
 const METADATA_COLUMNS = 'owner_id,envelope,created_at,updated_at';
 const RECORD_BATCH_SIZE = 100;
+const RECORD_PAGE_SIZE = 100;
 
 type SupabaseDatabaseClient = SupabaseClient<Database>;
 
@@ -46,12 +47,18 @@ export function createSupabaseSyncTransport(client: SupabaseDatabaseClient = get
     },
 
     async listRecords(ownerId: string) {
-      const { data, error } = await client
-        .from('vault_records')
-        .select(RECORD_COLUMNS)
-        .eq('owner_id', ownerId);
-      if (error) throwTransportError('Could not read remote vault records');
-      return (data ?? []).map(row => assertRemoteRecord(row, ownerId));
+      const records: EncryptedSyncRow[] = [];
+      for (let start = 0; ; start += RECORD_PAGE_SIZE) {
+        const { data, error } = await client
+          .from('vault_records')
+          .select(RECORD_COLUMNS)
+          .eq('owner_id', ownerId)
+          .range(start, start + RECORD_PAGE_SIZE - 1);
+        if (error) throwTransportError('Could not read remote vault records');
+        const page = data ?? [];
+        records.push(...page.map(row => assertRemoteRecord(row, ownerId)));
+        if (page.length < RECORD_PAGE_SIZE) return records;
+      }
     },
 
     async upsertRecords(rows: EncryptedSyncRow[]) {

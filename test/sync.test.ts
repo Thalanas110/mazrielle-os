@@ -102,8 +102,10 @@ function fakeClient(options: {
             eq() {
               return {
                 then(resolve: (value: { data: unknown; error: null }) => unknown) {
-                  return Promise.resolve(resolve({ data: table === 'vault_records' ? optionsWithDefaults.records : null, error: null }));
+                  const data = table === 'vault_records' ? optionsWithDefaults.records.slice(0, 100) : null;
+                  return Promise.resolve(resolve({ data, error: null }));
                 },
+                range: async (from: number, to: number) => ({ data: table === 'vault_records' ? optionsWithDefaults.records.slice(from, to + 1) : null, error: null }),
                 maybeSingle: async () => ({ data: null, error: null }),
               };
             },
@@ -128,6 +130,12 @@ test('validates remote encrypted records before returning them', async () => {
   const transport = createSupabaseSyncTransport(fakeClient({ records: [remoteRow()] }));
   const records = await transport.listRecords('user-1');
   assert.equal(records[0].payload.algorithm, 'AES-256-GCM');
+});
+
+test('reads every remote record page', async () => {
+  const records = Array.from({ length: 101 }, (_, index) => remoteRow({ id: `record-${index}` }));
+  const transport = createSupabaseSyncTransport(fakeClient({ records }));
+  assert.equal((await transport.listRecords('user-1')).length, 101);
 });
 
 test('rejects a remote record for a different owner', async () => {
