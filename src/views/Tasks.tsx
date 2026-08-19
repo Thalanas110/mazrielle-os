@@ -7,15 +7,23 @@ import { Modal, ConfirmDialog } from '@/components/Modal';
 import { formatRelative, isOverdue } from '@/lib/utils';
 
 const COLUMN_COVERS: Record<TaskStatus, string> = {
-  todo: '/task-covers/todo.png',
-  in_progress: '/task-covers/in-progress.png',
-  completed: '/task-covers/completed.png',
+  future_plans: '/task-covers/future-plans.png',
+  current_sprint: '/task-covers/current-sprint.png',
+  to_do: '/task-covers/to-do.png',
+  doing: '/task-covers/doing.png',
+  on_hold: '/task-covers/on-hold.png',
+  blocked: '/task-covers/blocked.png',
+  done: '/task-covers/done.png',
 };
 
 const COLUMNS: { id: TaskStatus; label: string; color: string; coverFallback: string }[] = [
-  { id: 'todo', label: 'To Do', color: 'bg-gray-400', coverFallback: 'bg-gray-400' },
-  { id: 'in_progress', label: 'In Progress', color: 'bg-blue-500', coverFallback: 'bg-blue-500' },
-  { id: 'completed', label: 'Completed', color: 'bg-green-500', coverFallback: 'bg-green-500' },
+  { id: 'future_plans', label: 'Future Plans', color: 'bg-violet-500', coverFallback: 'bg-violet-500' },
+  { id: 'current_sprint', label: 'Current Sprint', color: 'bg-indigo-500', coverFallback: 'bg-indigo-500' },
+  { id: 'to_do', label: 'To Do', color: 'bg-gray-400', coverFallback: 'bg-gray-400' },
+  { id: 'doing', label: 'Doing', color: 'bg-blue-500', coverFallback: 'bg-blue-500' },
+  { id: 'on_hold', label: 'On Hold', color: 'bg-amber-500', coverFallback: 'bg-amber-500' },
+  { id: 'blocked', label: 'Blocked', color: 'bg-red-500', coverFallback: 'bg-red-500' },
+  { id: 'done', label: 'Done', color: 'bg-green-500', coverFallback: 'bg-green-500' },
 ];
 
 const PRIORITY_COLORS: Record<TaskPriority, string> = {
@@ -51,7 +59,7 @@ export default function Tasks() {
   useEffect(() => { load(); }, []);
 
   const toggleStatus = async (task: Task) => {
-    const next: TaskStatus = task.status === 'completed' ? 'todo' : task.status === 'todo' ? 'in_progress' : 'completed';
+    const next: TaskStatus = task.status === 'done' ? 'to_do' : 'done';
     await updateTask(task.id, { status: next });
     await load();
   };
@@ -68,11 +76,12 @@ export default function Tasks() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {COLUMNS.map(col => {
-          const colTasks = tasks.filter(t => t.status === col.id);
-          return (
-            <div key={col.id} className="flex flex-col gap-2">
+      <div className="-mx-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex min-w-max gap-4">
+          {COLUMNS.map(col => {
+            const colTasks = tasks.filter(t => t.status === col.id);
+            return (
+              <div key={col.id} className="flex w-[18rem] shrink-0 flex-col gap-2">
               <div className="card overflow-hidden">
                 <TaskColumnCover src={COLUMN_COVERS[col.id]} fallbackClass={col.coverFallback} />
                 <div className="flex items-center gap-2 px-3 py-2">
@@ -85,18 +94,18 @@ export default function Tasks() {
                 {colTasks.length === 0 ? (
                   <div className="card border-dashed py-8 text-center text-xs text-gray-400">No tasks</div>
                 ) : colTasks.map(t => {
-                  const overdue = t.status !== 'completed' && isOverdue(t.due_date);
+                  const overdue = t.status !== 'done' && isOverdue(t.due_date);
                   return (
                     <div key={t.id} className="card group p-3 transition-all hover:shadow-md">
                       <div className="flex items-start gap-2.5">
                         <button
                           onClick={() => toggleStatus(t)}
-                          className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-all ${t.status === 'completed' ? 'border-green-500 bg-green-500' : 'border-gray-300 hover:border-blue-500 dark:border-gray-600'}`}
+                          className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-all ${t.status === 'done' ? 'border-green-500 bg-green-500' : 'border-gray-300 hover:border-blue-500 dark:border-gray-600'}`}
                         >
-                          {t.status === 'completed' && <SquareCheckBig className="h-3 w-3 text-white" />}
+                          {t.status === 'done' && <SquareCheckBig className="h-3 w-3 text-white" />}
                         </button>
                         <div className="min-w-0 flex-1">
-                          <h3 className={`text-sm font-medium ${t.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>{t.title}</h3>
+                          <h3 className={`text-sm font-medium ${t.status === 'done' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>{t.title}</h3>
                           {t.description && <p className="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">{t.description}</p>}
                           <div className="mt-2 flex flex-wrap items-center gap-1.5">
                             <span className={`badge ${PRIORITY_COLORS[t.priority]}`}>
@@ -121,9 +130,10 @@ export default function Tasks() {
                   );
                 })}
               </div>
-            </div>
-          );
-        })}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {tasks.length === 0 && (
@@ -164,7 +174,7 @@ function TaskForm({ task, onClose, onSave }: {
   const [form, setForm] = useState({
     title: task?.title ?? '',
     description: task?.description ?? '',
-    status: task?.status ?? 'todo' as TaskStatus,
+    status: task?.status ?? 'to_do' as TaskStatus,
     priority: task?.priority ?? 'medium' as TaskPriority,
     due_date: task?.due_date ?? '',
     tags: task?.tags ?? '',
@@ -196,9 +206,9 @@ function TaskForm({ task, onClose, onSave }: {
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-500">Status</label>
             <select className="input" value={form.status} onChange={e => setForm({ ...form, status: e.target.value as TaskStatus })}>
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
+              {COLUMNS.map(column => (
+                <option key={column.id} value={column.id}>{column.label}</option>
+              ))}
             </select>
           </div>
           <div>
