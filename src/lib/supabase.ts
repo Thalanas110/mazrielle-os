@@ -1,10 +1,11 @@
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
-import { getAuthRedirectUrl } from './supabaseConfig';
+import { getAuthRedirectUrl } from './supabaseConfig.ts';
 import type { Database } from './supabase.types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-const configuredRedirectUrl = import.meta.env.VITE_SUPABASE_REDIRECT_URL as string | undefined;
+const runtimeEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+const supabaseUrl = runtimeEnv?.VITE_SUPABASE_URL;
+const supabaseAnonKey = runtimeEnv?.VITE_SUPABASE_ANON_KEY;
+const configuredRedirectUrl = runtimeEnv?.VITE_SUPABASE_REDIRECT_URL;
 
 let client: SupabaseClient<Database> | null = null;
 
